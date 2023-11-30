@@ -25,3 +25,11 @@ def helloWorld(req: func.HttpRequest, msg: func.Out [func.QueueMessage]) -> func
              "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
              status_code=200
         )
+
+
+@app.blob_trigger(arg_name="myblob", path="azure-webjobs-hosts/{name}",
+                               connection="etlforpmrga1bc") 
+def TestTrigger(myblob: func.InputStream):
+    logging.info(f"Python blob trigger function processed blob"
+                f"Name: {myblob.name}"
+                f"Blob Size: {myblob.length} bytes")
