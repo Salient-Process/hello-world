@@ -9,4 +9,3 @@ bucket-directories:
     output: stage1/tmp
     errors: stage1/errors
 connection:
-    connectionString: DefaultEndpointsProtocol=https;AccountName=etlforpmrga1bc;AccountKey=4AxQSf2HVfBpoALqRIdpcMBeIrsUvFts+c+EJkaCp4TPgrkMZrwiNTgSrynHlm5899rKQEiCz8+p+AStZLcPZA==;EndpointSuffix=core.windows.net
