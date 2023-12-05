@@ -41,6 +41,7 @@ def functionblop(myblob: func.InputStream):
                 f"Name: {myblob.name}\n"
                 f"Blob Size: {myblob.length} bytes")
 
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(script_dir, "stage1.yaml"), "r") as f:
         stage1_config = yaml.load(f, Loader=yaml.FullLoader)
