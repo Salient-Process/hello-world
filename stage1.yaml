@@ -1,0 +1,12 @@
+# Config for stage1.py
+directories:
+  input: /tmp/stage1/input
+  error: /tmp/stage1/errors
+  work: /tmp/stage1/.working
+  output: /tmp/stage2/input
+bucket-directories:
+    input: stage1/input
+    output: stage1/tmp
+    errors: stage1/errors
+connection:
+    connectionString: DefaultEndpointsProtocol=https;AccountName=etlforpmrga1bc;AccountKey=4AxQSf2HVfBpoALqRIdpcMBeIrsUvFts+c+EJkaCp4TPgrkMZrwiNTgSrynHlm5899rKQEiCz8+p+AStZLcPZA==;EndpointSuffix=core.windows.net
