@@ -40,13 +40,12 @@ def functionblop(myblob: func.InputStream):
     logging.info(f"Python blob trigger function processed blob\n"
                 f"Name: {myblob.name}\n"
                 f"Blob Size: {myblob.length} bytes")
-
+    
+    connection_string = os.environ['AzureWebJobsStorage']
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(script_dir, "stage1.yaml"), "r") as f:
         stage1_config = yaml.load(f, Loader=yaml.FullLoader)
-
-    connection_string = stage1_config["connection"]["connectionString"]
 
     stage1_input_dir = stage1_config["directories"]["input"]
     stage1_output_dir = stage1_config["directories"]["output"]
