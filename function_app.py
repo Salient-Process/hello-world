@@ -7,6 +7,7 @@ import re
 from cf1 import runCF
 
 
+
 app = func.FunctionApp()
 
 @app.blob_trigger(arg_name="myblob", path="stage1/input/{name}",
@@ -77,14 +78,10 @@ def blop_trigger(myblob: func.InputStream):
         print(f"############ END: Stage 1 for zip file: {zip_file_on_tmp} ############")
     except:
         logging.info(f"############ ERROR: Stage 1 for zip file: {zip_file_on_tmp} ############")
-    """
     # Delete stage 1 zip file
     blob = input_container.get_blob_client(blop_name)     
 
     if blob.exists():
         logging.debug(f"Deleting bucket file: {blop_name}")
         blob.delete_blob()
-    #
-    with ZipFile(zip_file_on_tmp, 'r') as zip_ref:
-    zip_ref.extractall(stage1_output_dir)
-    """
+    

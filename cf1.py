@@ -69,7 +69,7 @@ def runCF(config, zip_file_path=None):
     finally:
         # Delete current batch working directory
         logging.info("Test here")
-        #shutil.rmtree(stage1_batch_work_dir)
+        shutil.rmtree(stage1_batch_work_dir)
     #                                                                                      #
     ########################################################################################
     
