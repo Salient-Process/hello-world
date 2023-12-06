@@ -1,18 +1,16 @@
 import azure.functions as func
 import logging
-from zipfile import ZipFile
 from azure.storage.blob import BlobServiceClient
 import os
 import yaml
 import re
 from cf1 import runCF
-import time
 
 
 app = func.FunctionApp()
 
 @app.blob_trigger(arg_name="myblob", path="stage1/input/{name}",
-                               connection="azureWebStorage") 
+                               connection="AzureWebJobsStorage")
 def blop_trigger(myblob: func.InputStream):
     logging.info(f"Python blob trigger function processed blob"
                 f"Name: {myblob.name}"

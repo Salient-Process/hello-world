@@ -3,9 +3,6 @@ import re
 import zipfile
 import logging
 import shutil
-import pandas as pd
-import numpy as np
-from datetime import datetime
 
 
 def process_zip_file(config, file_path, work_dir, output_dir):
