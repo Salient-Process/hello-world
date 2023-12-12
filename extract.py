@@ -2,9 +2,8 @@ import os
 import shutil
 import logging
 import time
-import re
 import script_util as util
-from stage1 import process_zip_file
+from stage1 import extractZip
 
 
 def runCF(config, zip_file_path=None):
@@ -15,8 +14,6 @@ def runCF(config, zip_file_path=None):
     stage2_input_dir = util.ensure_dir_exists(config["directories"]["output"])
     output_dir = None
     exist = os.path.exists(zip_file_path)
-    logging.info(f"Tets de CF1: {zip_file_path}")
-    logging.info(f"Test de CF1: {exist}")
 
     if zip_file_path is None:
         logging.info("Tets de CF2")
@@ -47,10 +44,10 @@ def runCF(config, zip_file_path=None):
         logging.info(f"Zip File Path: {zip_file_path}")
         
         ### (3) Applying Stage 1 logic to zip file #############################################
-        process_zip_file(config, zip_file_path, stage2_tmp_dir, stage1_batch_work_dir)    
+        extractZip(config, zip_file_path, stage2_tmp_dir, stage1_batch_work_dir)    
         
         ### (4) Cleaning up and moving resulting CSV directory to stage2/input #################
-        shutil.rmtree(stage2_tmp_dir)
+        #shutil.rmtree(stage2_tmp_dir)
 
         stage2_csv_dir = os.path.join(stage1_batch_work_dir, f"csv-{timestamp}")
 
@@ -58,6 +55,7 @@ def runCF(config, zip_file_path=None):
         os.makedirs(stage2_csv_dir)
 
         # Move any CSV file to stage2_csv_dir
+        """
         for path in os.listdir(stage1_batch_work_dir):
             full_path = os.path.join(stage1_batch_work_dir, path)
 
@@ -66,10 +64,12 @@ def runCF(config, zip_file_path=None):
 
         # Move the batch-specific csv output directory to stage2_input_dir
         output_dir = shutil.move(stage2_csv_dir, stage2_input_dir)
+        """
+        output_dir = stage2_tmp_dir
     finally:
         # Delete current batch working directory
         logging.info("Test here")
-        shutil.rmtree(stage1_batch_work_dir)
+        #shutil.rmtree(stage1_batch_work_dir)
     #                                                                                      #
     ########################################################################################
     

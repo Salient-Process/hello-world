@@ -8,7 +8,7 @@ import numpy as np
 from datetime import datetime
 
 
-def process_zip_file(config, file_path, work_dir, output_dir):
+def extractZip(config, file_path, work_dir, output_dir):
     """
         a.	Unpack the zip file
         b.	Transform the input CSV files it contains into output CSV files, none of which should be > 300MB 
@@ -25,38 +25,15 @@ def process_zip_file(config, file_path, work_dir, output_dir):
     # Extract file and place in output_dir
     with zipfile.ZipFile(file_path, 'r') as f:
         f.extractall(work_dir)
-    try:
-        print("Calling readFoldersAndJoin")
-        folderName = readFoldersAndJoin(work_dir)
-    except:
-        raise Exception('Was nos posible to extract/join the data')
-    
-    try:
-        print("Creating Current Orders")
-        createCurrentOrders(work_dir)
-    except:
-        raise Exception('There was an error creating Current Oders')
-    
-    try:
-        print("Creating Intransit Items")
-        createIntransitItems(work_dir)
-    except:
-        raise Exception('There was an error creating Intransit Items')
-    try:
-        print('Creating Digital Transformation')
-        createDigitalTransformation(work_dir)
-    except:
-        raise Exception('There was an error creating Digital Transformation')
-    
-    deleteData(work_dir,folderName)
-    
+    os.remove(file_path)
+    """"
     # Move any CSV file to stage2_csv_dir
     for path in os.listdir(work_dir):
         full_path = os.path.join(work_dir, path)
 
         if re.search(r"\.csv\Z", path, re.IGNORECASE):
             shutil.move(full_path, output_dir)
-
+    """
     return
 
 def readFoldersAndJoin(path):
@@ -117,27 +94,25 @@ def readFoldersAndJoin(path):
 
     return foldersName
 
-def createPlantMaterial(path,intransit):
-    print('#5-1 Calling Plant Material')
+def createPlantMaterial(path,instransit):
+    #type_dictT = {'MANDT':'str','SPRAS':'str','PRODH':'str','VTEXT':'str'}
     type_dictT = {'PRODH':'str','ZZGLFUNC':'str','ZZGLVAR':'str','ZZGLBRAND':'str'}
     type_dictM = {'MATNR':'str','PRDHA':'str'}
     #Read the CSV's to create the table
-    print('#5-2 Read all the files')
     mvke = pd.read_csv(os.path.join(path,'MVKE.csv'),on_bad_lines='skip',low_memory=False)
     makt = pd.read_csv(os.path.join(path,'MAKT.csv'),on_bad_lines='skip',low_memory=False)
     t25a5 = pd.read_csv(os.path.join(path,'T25a5.csv'),on_bad_lines='skip',low_memory=False)
-    t179t = pd.read_csv(os.path.join(path,'T179T.csv'),on_bad_lines='skip',low_memory=False,dtype = type_dictT)
-    mara = pd.read_csv(os.path.join(path,'MARA.csv'),on_bad_lines='skip',low_memory=False,dtype = type_dictM)
+    t179t = pd.read_csv(os.path.join(path,'t179t.csv'),on_bad_lines='skip',low_memory=False,dtype = type_dictT)
+    mara = pd.read_csv(os.path.join(path,'mara.csv'),on_bad_lines='skip',low_memory=False,dtype = type_dictM)
 
     
     makt = makt.drop_duplicates()
     makt = makt.drop_duplicates(subset=['MATNR'])
-    if intransit:
+    if instransit:
         mvke = mvke[['MATNR','ZZ_PROD_CAT']]
         mvke = mvke.drop_duplicates()
     else:
-        mvke['ZZ_ABC'].astype(str).replace('', np.nan, inplace=True)
-        mvke.dropna(subset=['ZZ_ABC'], inplace=True)
+        mvke = mvke[['MATNR','ZZ_PROD_CAT','VMSTA']]
     
     t25a5.rename(columns={'WWPRC':'ZZ_PROD_CAT'},inplace = True)
     t25a5 = t25a5.drop_duplicates()
@@ -169,18 +144,6 @@ def format_datetime(dt_series):
 
     return dt_series
 
-def cmgst(row):
-    if row['CMGST'] == 'A':
-        return 'A - Credit check was executed, document OK'
-    elif row['CMGST'] =='B':
-        return 'B - Credit check was executed, document not OK' 
-    elif row['CMGST'] =='C':
-        return 'C - Credit check was executed, document not OK, partial release' 
-    elif row['CMGST'] =='D':
-        return 'D - Document released by credit representative' 
-    else:
-        return 'Credit check was not executed/Status not set'
-
 def abgru(row):
 
     abgruDescription = {'0':'Assigned by the System (internal)','1':'Delivery date too late','2':'Product with Poor Quality','3':'Product Too Expensive','4':'Competitor better','5':'DO NOT USE Insufficient Guarantee','6':'Rebates CMR rejection (after CM cancel.)','7':'DO NOT USE CASA - INC Cancellation','8':'Quota Exceeded/Insufficient Allocation','9':'Order Date is Outside Promotion Validity','10':'Colgate Decision to Not Ship','11':'Cust.to receive replacement','12':'Without Valid Price','13':'UoM inconsistences/Order with decimals','14':'Obsolete Product','15':'Prom. Quota is not enough in Dist.Center','16':'COP Cancel >90 Days','20':'COP Cut due to Backorder','21':'COP Balance Cleared - Contact Customer','22':'Rejected due to Order Split','23':'Product Not Available:Supply Chain','24':'COP Canceled Line','25':'COP Custom Logo','26':'COP Cancel per A/R, Outstanding Balance','27':'COP Cancel Shipped under othr order/line','28':'COP ITB Text Block','29':'COP-Copy w/Mat Determination','30':'COP ITB Text validation','31':'COP No Credit Due','32':'COP Cancel Unshipped Product','33':'COP Product Not Returned','34':'COP Cancel due to discontinued','35':'COP Cancel OE error','36':'COP Cancel Customer error','37':'COP Mat Sub/Changed Sku','38':'COP Canceled Entire Plan','50':'DO NOT USE Transaction is being checked','55':'CMI/VMI Order Rejection','60':'Material Obsolete 1 PH','61':'Unauthorized Purchase Order','62':'Incorrect Quantity','63':'Duplicate Order','64':'Credit / Payment Issues','70':'Quota Exceeded/OOS Situation','75':'Shelf life','80':'Sales Dpt. Request','81':'Customer Requested/Approved order change','82':'NoCostEstim Release for Matl at SO Dte','83':'Error due to item with error 82','89':'Logistical disc conditions not fulfilled','90':'Wrong Order Creation.','91':'EDI: Invalid Item.','92':'EDI: Price Error.','93':'DO NOT USE Free Goods Order Increment Er','94':'DO NOT USE EDI: Invalid Deliv Date.','96':'EDI: Alt UoM Conversion Wrong.','99':'CQC - Update Error','AQ':'Minimum Order Quantity Not Met','BM':'Below Minimum Order','CC':'Customer Canceled/Changed','CO':'Close-out Item','DD':'Out of Stock due to ATP','DI':'Discontinued/Inactive/Obsolete','DS':'Master Data Integrity:Invalid Item','FS':'Ordered Outside Promotional','IM':'Master Data Integrity:Disco./Inactive','MQ':'Minimum Shipping Quantity not met','N0':'Sales Requested Change','N1':'Customer Approved Change','N4':'Pricing Issues','N5':'Insufficent Sales Allocation Quantity','OW':'Overweight order','PC':'Process Cut','PH':'Change the Old Product Hier. in SKU','PM':'Pricing Issues','QB':'Quota Block','QC':'Quota exceeded (Commercial)','QP':'Quota exceeded Promo (Commercial)','QR':'Product reserved for other customers','QS':'Quota exceeded (Short Stock)','RQ':'MOQ Reject','SL':'ST Licence Rqrd','SS':'COP Sullivan-Schein Credit Hold','TO':'Test Orders','XQ':'MOQ Cancellation','Z8':'Splitting: Order cancelled','ZH':'COP Historical Data','ZZ':'Product Not Available: Supply Chain'}
@@ -198,9 +161,25 @@ def abgru(row):
         return message
     else:
         return ''
+    
+def cmgst(row):
+    if row['CMGST'] == 'A':
+        return 'A - Credit check was executed, document OK'
+    elif row['CMGST'] =='B':
+        return 'B - Credit check was executed, document not OK' 
+    elif row['CMGST'] =='C':
+        return 'C - Credit check was executed, document not OK, partial release' 
+    elif row['CMGST'] =='D':
+        return 'D - Document released by credit representative' 
+    else:
+        return 'Credit check was not executed/Status not set'
 
-def createCurrentOrders(path):
+def createCurrentOrders(path,pathCSV):
     #Read the CSV's to create the table
+    mydate = datetime.now()
+    month = mydate.strftime("%b")
+    logging.info("Calling create CurrentOrder")
+
     type_dictV = {'VBELN':'str','POSNR':'float','MATNR':'str','NETWR':'str','ERNAM':'str','KWMENG':'float','KMEIN':'str','NTGEW':'float','ABGRU':'str','KBMENG':'float','LPRIO':'str','ERDAT':'str','ERZET':'str','WERKS':'str','BRGEW':'float','GEWEI':'str','WAERK':'str','PRODH':'str'}
 
     vbap = pd.read_csv(os.path.join(path,'VBAP.csv'),on_bad_lines='skip',low_memory=False,dtype=type_dictV)
@@ -228,6 +207,7 @@ def createCurrentOrders(path):
     vbap['ERDAT'] = format_datetime(vbap['ERDAT'])
     vbep['MBDAT'] =  vbep['MBDAT'].astype(str)
     vbep['MBDAT'] = format_datetime(vbep['MBDAT'])
+    vbap['VBELN'] = vbap.VBELN.apply(lambda x: str(x).lstrip('0'))
 
     vbak.rename(columns={'ERDAT':'ERDAT_Item','ERZET':'ERZET_Item','ERNAM':'ERNAM_Item'},inplace = True)
     vbak['ERDAT_Item'] =  vbak['ERDAT_Item'].astype(str)
@@ -252,6 +232,7 @@ def createCurrentOrders(path):
     knvh2.rename(columns = {'HKUNNR':'Level2'},inplace = True)
     knvh = knvh.drop_duplicates(subset=['KUNNR'],keep='last')
     knvhf = pd.merge(knvh,knvh2,on = 'KUNNR',how='left')
+    #knvhf = knvh
     knvhf.drop_duplicates(subset=['KUNNR'],keep='first')
 
     #join all the tables
@@ -279,6 +260,7 @@ def createCurrentOrders(path):
     currentOrder = pd.merge(currentOrder,pivot,on = ['Id'],how = 'inner')
     currentOrder = currentOrder.drop_duplicates()
     currentOrder['MaterialCuts2'] = np.where(np.logical_and(currentOrder['MaterialCuts1'] == 0,currentOrder['MaterialCuts1'] !=0),currentOrder['NETWR'],((currentOrder.KWMENG - currentOrder.MaterialCuts1)*(currentOrder.NETWR/currentOrder.KWMENG)))
+    currentOrder['MaterialCuts2'] = round(currentOrder.MaterialCuts2,2)
     currencyF = currentOrder['WAERK'].unique()
     for f in currencyF:
         if f != 'USD':
@@ -288,6 +270,7 @@ def createCurrentOrders(path):
         else:
             currentOrder['MaterialCuts3'] = currentOrder.MaterialCuts2
             currentOrder['NETWR_CONVERTED'] = currentOrder.NETWR
+
 
     #conf_total_quantity
     today = datetime.now()
@@ -307,20 +290,29 @@ def createCurrentOrders(path):
     currentOrder['MATNR'] = currentOrder.MATNR.apply(lambda x: str(x).lstrip('0'))
     currentOrder = currentOrder.drop_duplicates()
     currentOrder.loc[currentOrder['ETENR'] != 1, ['Activity']] = 'Delivery Schedule Line'
+    currentOrder['Type'] = 'Sales Order'
 
+    currentOrder = currentOrder[['ABGRU','Activity','AUART','BRGEW','BSTNK','CMGST','conf_total_quantity','confirmed_quantity_weight','ERDAT','ERDAT_Item','ETENR','GEWEI','Id','KBMENG','KMEIN','KUNNR','KWMENG','LIFSK','MAKTX','MaterialCuts1','MaterialCuts2','MaterialCuts3','MATNR','MBDAT','NAME1','NETWR','NETWR_CONVERTED','POSNR','ProductName','SD header creation date','Sold To Party Name','Type','unconf_total_quantity','VBELN','VBTYP','VDATU','VKORG','WAERK','WERKS','WMENG','ZZ_VDATU','ZZGLFUNC','ZZORATE']]
 
     rows = len(currentOrder)
     currentOrder = pd.concat([currentOrder]*2, ignore_index=True)
     id = currentOrder.iloc[rows:].WERKS+'-'+currentOrder.iloc[rows:].MATNR
     currentOrder['Id'].iloc[rows:] = id
-
-    currentOrder['Type'] = 'Sales Order'
     currentOrder['Type'].iloc[rows:] = 'Plant Material'
 
-    write_in_chunks(currentOrder,'CurrentOrder.csv','CurrentOrder',path)
+    currentOrder = currentOrder.loc[((currentOrder['Activity'] != 'Delivery Schedule Line') & ( currentOrder['ETENR'] == 1 )) 
+    | ((currentOrder['Activity'] == 'Delivery Schedule Line') & ( currentOrder['ETENR'] != 1 ))]
 
-def createIntransitItems(path):
+    fileName = f'CurrentOrder_{month}'
+    write_in_chunks(currentOrder,'CurrentOrder.csv',fileName,pathCSV)
 
+def createInstansitItems(path,pathCSV):
+    mydate = datetime.now()
+    month = mydate.strftime("%b")
+    logging.info("Calling create IntransitItem")
+    logging.info(f"Merge Path: {path}")
+    logging.info(f"Final Path: {pathCSV}")
+    #month = 'Nov'
     #type_dictV = {'VBELN':'str','POSNR':'float','MATNR':'str','NETWR':'str','ERNAM':'str','KWMENG':'float','KMEIN':'str','NTGEW':'float','ABGRU':'str','KBMENG':'float','LPRIO':'str','ERDAT':'str','ERZET':'str','WERKS':'str','BRGEW':'float','GEWEI':'str','WAERK':'str','PRODH':'str'}
 
     vbap = pd.read_csv(os.path.join(path,'VBAP.csv'),on_bad_lines='skip',low_memory=False)
@@ -389,6 +381,8 @@ def createIntransitItems(path):
 
     plantMaterial = createPlantMaterial(path,True)
     intransitItem = pd.merge(plt,plantMaterial,on = 'MATNR',how = 'inner')
+    intransitItem['LABST'] = intransitItem['LABST'].astype(str).str.replace('-','')
+    intransitItem['LABST'] = intransitItem['LABST'].astype(float)
     intransitItem['MATNR_Ekpo'] = intransitItem.MATNR_Ekpo.apply(lambda x: str(x).lstrip('0'))
     intransitItem['MATNR'] = intransitItem.MATNR.apply(lambda x: str(x).lstrip('0'))
 
@@ -401,8 +395,8 @@ def createIntransitItems(path):
     intransitItem['Activity'] = 'Instransit Item'
     intransitItem['Id'] = intransitItem.WERKS+'-'+intransitItem.MATNR
     intransitItem['Type'] = 'Total Plant'
+    intransitItem =  intransitItem[['Activity','available_after_open_orders','BRGEW','CHARG','DPREG','EINDT','EINME','ERDAT_vttk','ERDAT_y','GSMNG','Id','INSME','LABST','LFDAT','LGMNG','LGORT','LGORT_Ekpo','MAKTX','MATNR','MBDAT','net_inventory_available','On_order_kpi','POSNR','ProductName','SPEME','STTRG','TKNUM','Type','UMLME','VBELN','VSTEL','WADAT','WERKS','ZZGLFUNC']]
     rows = len(intransitItem)
-    
     intransitItem = pd.concat([intransitItem]*3,ignore_index=True)
     id = intransitItem.iloc[rows:rows*2].WERKS+'-'+intransitItem.iloc[rows:rows*2].MATNR+'-'+intransitItem.iloc[rows:rows*2].LGORT
     intransitItem['Id'].iloc[rows:rows*2] = id
@@ -411,30 +405,34 @@ def createIntransitItems(path):
     id = intransitItem.iloc[rows*2:].VBELN.astype(str)+'-'+intransitItem.iloc[rows*2:].POSNR.astype(str)+'-'+intransitItem.iloc[rows*2:].TKNUM.astype(str)
     intransitItem['Id'].iloc[rows*2:] = id
     intransitItem['Type'].iloc[rows*2:] = 'Instransit'
-    write_in_chunks(intransitItem,'IntransitItem.csv','IntransitItem',path)
-
-def write_in_chunks(df, file_name, file0,path):
-    print("###1 Start write in chunks")
-    lines_per_file = 200000
+    fileName = f'IntransitItem_{month}'
+    write_in_chunks(intransitItem,'IntransitItem.csv',fileName,pathCSV)
+    
+def write_in_chunks(df, file_name,file0,path):
+    lines_per_file = 80000
     file = os.path.join(path,file_name)
+    logging.info(f"File Name: {file}")
     df.to_csv(file,index = False)
-    print('#####2 Write the CSV')
+    logging.info(f"Starting to move create the little CSVs")
 
     with open(file, 'r', encoding='utf-8') as file:
+        logging.info(f'1### Step')
         header = file.readline()  # read the header
         file_num = 1        
         while True:
+            logging.info(f'2### Step')
             lines = [file.readline() for _ in range(lines_per_file)]
             if not lines[0]:  # stop when end of file is reached
                 break
             fileName = os.path.join(path,f'{file0}_{file_num}.csv')
-            print(f'###3 {file0}_{file_num}.csv')
+            logging.info(f'3### {file0}_{file_num}.csv')
             with open(fileName, 'w', encoding='utf-8') as out_file:
                 out_file.write(header)  # write the header to each output file
                 out_file.writelines(lines)
             file_num += 1
-    print("###4 End write in chunks")
     os.remove(path+'/'+file_name)
+    
+
 
 def getCurrencyChange(path,fromC):
     if fromC != 'USD':
@@ -445,7 +443,7 @@ def getCurrencyChange(path,fromC):
         if len(value) > 0:
             return value[0][3]
         else:
-            return 1
+            return 18
     else:
         return 1
 
@@ -454,7 +452,10 @@ def deleteData(path,foldersName):
         os.remove(os.path.join(path, file+'.csv'))
         shutil.rmtree(os.path.join(path, file))
 
-def createDigitalTransformation(path):
+def createDigitalTransformation(path,pathCSV):
+    mydate = datetime.now()
+    #month = mydate.strftime("%d_%b")
+    month = 'Nov'
 
     vbap = pd.read_csv(os.path.join(path,'VBAP.csv'),on_bad_lines='skip',low_memory=False)
     vbak = pd.read_csv(os.path.join(path,'VBAK.csv'),on_bad_lines='skip',low_memory=False)
@@ -602,5 +603,5 @@ def createDigitalTransformation(path):
     digital = digital.drop_duplicates()
     digital = pd.merge(digital,pivot,on = ['Id','Activity'],how = 'left')
 
-
-    write_in_chunks(digital,'Digital.csv','Digital',path)
+    fileName = f'Digital_{month}'
+    write_in_chunks(digital,'Digital.csv',fileName,pathCSV)

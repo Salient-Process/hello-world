@@ -4,7 +4,11 @@ from azure.storage.blob import BlobServiceClient
 import os
 import yaml
 import re
-from cf1 import runCF
+import time
+import shutil
+from extract import runCF
+from merge import merge
+from createFiles import setCurrentOrder,setIntransitItem,setDigitalTransformation
 
 
 app = func.FunctionApp()
@@ -12,6 +16,7 @@ app = func.FunctionApp()
 @app.blob_trigger(arg_name="myblob", path="stage1/input/{name}",
                                connection="AzureWebJobsStorage")
 def blop_trigger(myblob: func.InputStream):
+    global output_dir
     logging.info(f"Python blob trigger function processed blob"
                 f"Name: {myblob.name}"
                 f"Blob Size: {myblob.length} bytes")
@@ -25,7 +30,6 @@ def blop_trigger(myblob: func.InputStream):
 
     stage1_bucket_input_folder = stage1_config["bucket-directories"]["input"]
     stage1_bucket_errors_folder = stage1_config["bucket-directories"]["errors"]
-    stage2_bucket_folder = stage1_config["bucket-directories"]["output"]
 
     ### (2) Apply trigger filter (based on file name/path & extension) #####################
     # File name pattern: stage1/input/*.zip
@@ -36,7 +40,6 @@ def blop_trigger(myblob: func.InputStream):
     input_container = blob_service_client.get_container_client(container="stage1")
     blop_name = myblob.name[(myblob.name.find('input/')):]#samplecontainer/input/LAP1027.zip
     blob_client = input_container.get_blob_client(blop_name)
-    zipName =  blop_name.replace('input/','')
 
     ### (3) Set up /tmp/stage1 tree structure ##############################################
     logging.info(f"Processing file: {blop_name}")
@@ -56,23 +59,12 @@ def blop_trigger(myblob: func.InputStream):
         logging.info(f"############ START: Stage 1 for zip file: {zip_file_on_tmp} ############")
         output_dir = runCF(stage1_config, zip_file_on_tmp)
         logging.info(f"Output dir: {output_dir}")
-
-        fileList = os.listdir(output_dir)
-        for filename in fileList:
-            logging.info(f"FilesList: {filename}")
-            container_client_upload = blob_service_client.get_container_client(container="stage1/tmp")
-            blob_client_upload = container_client_upload.get_blob_client(filename)
-
-            f = open(output_dir+'\\'+filename, 'r')
-            byt = f.read()
-            blob_client_upload.upload_blob(byt, blob_type="BlockBlob")
-
+        container_client_upload = blob_service_client.get_container_client(container="stage1/merge")
         # Note: A directory can't be created atomically in a bucket. So instead of using a
         # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
         #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
-        blob = container_client_upload.get_blob_client("cf2.trigger.txt")
+        blob = container_client_upload.get_blob_client("merge.trigger.txt")
         blob.upload_blob("trigger me")
-
         print(f"############ END: Stage 1 for zip file: {zip_file_on_tmp} ############")
     except:
         logging.info(f"############ ERROR: Stage 1 for zip file: {zip_file_on_tmp} ############")
@@ -82,4 +74,227 @@ def blop_trigger(myblob: func.InputStream):
     if blob.exists():
         logging.debug(f"Deleting bucket file: {blop_name}")
         blob.delete_blob()
+
+@app.blob_trigger(arg_name="myblob", path="stage1/merge/{name}",
+                               connection="AzureWebJobsStorage") 
+def mergeFiles(myblob: func.InputStream):
+    logging.info(f"Python blob trigger function processed blob"
+                f"Name: {myblob.name}"
+                f"Blob Size: {myblob.length} bytes")
+    logging.info(f"Output Directory: {output_dir}")
+    global merge_directory
+    connection_string = os.environ['AzureWebJobsStorage']
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(script_dir, "stage1.yaml"), "r") as f:
+        stage1_config = yaml.load(f, Loader=yaml.FullLoader)
+
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    input_container = blob_service_client.get_container_client(container="stage1/merge")
+    blob = input_container.get_blob_client("merge.trigger.txt")
     
+    merge_directory = merge(stage1_config,output_dir)
+
+    container_client_upload = blob_service_client.get_container_client(container="stage1/current")
+        # Note: A directory can't be created atomically in a bucket. So instead of using a
+        # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
+        #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
+    blobCurrent = container_client_upload.get_blob_client("current.trigger.txt")
+    blobCurrent.upload_blob("trigger me")
+
+    if blob.exists():
+        logging.debug(f"Deleting bucket file: merge.trigger.txt")
+        blob.delete_blob()
+
+
+
+@app.blob_trigger(arg_name="myblob", path="stage1/current/{name}",
+                               connection="AzureWebJobsStorage") 
+def createCurrentOrder(myblob: func.InputStream):
+    logging.info(f"Python blob trigger function processed blob"
+                f"Name: {myblob.name}"
+                f"Blob Size: {myblob.length} bytes")
+    logging.info(f"Merge Directory: {merge_directory}")
+    global currentOrderDirectory
+    connection_string = os.environ['AzureWebJobsStorage']
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(script_dir, "stage1.yaml"), "r") as f:
+        stage1_config = yaml.load(f, Loader=yaml.FullLoader)
+    
+    currentOrderDirectory = setCurrentOrder(stage1_config,merge_directory)
+
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    input_container = blob_service_client.get_container_client(container="stage1/current")
+    blob = input_container.get_blob_client("current.trigger.txt")
+
+    if blob.exists():
+        logging.debug(f"Deleting bucket file: current.trigger.txt")
+        blob.delete_blob()
+
+    container_client_upload = blob_service_client.get_container_client(container="stage1/intransit")
+        # Note: A directory can't be created atomically in a bucket. So instead of using a
+        # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
+        #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
+    blobCurrent = container_client_upload.get_blob_client("intransit.trigger.txt")
+    blobCurrent.upload_blob("trigger me")
+
+
+@app.blob_trigger(arg_name="myblob", path="stage1/intransit/{name}",
+                               connection="AzureWebJobsStorage") 
+def createIntransitItem(myblob: func.InputStream):
+    logging.info(f"Python blob trigger function processed blob"
+                f"Name: {myblob.name}"
+                f"Blob Size: {myblob.length} bytes")
+    global instransitDirectory
+
+    connection_string = os.environ['AzureWebJobsStorage']
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    input_container = blob_service_client.get_container_client(container="stage1/intransit")
+    blob = input_container.get_blob_client("intransit.trigger.txt")
+    logging.info(f"Merge Directory: {merge_directory}")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(script_dir, "stage1.yaml"), "r") as f:
+        stage1_config = yaml.load(f, Loader=yaml.FullLoader)
+
+    instransitDirectory = setIntransitItem(stage1_config,merge_directory)
+
+    if blob.exists():
+        logging.debug(f"Deleting bucket file: intransit.trigger.txt")
+        blob.delete_blob()
+
+    container_client_upload = blob_service_client.get_container_client(container="stage1/digital")
+        # Note: A directory can't be created atomically in a bucket. So instead of using a
+        # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
+        #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
+    blobCurrent = container_client_upload.get_blob_client("digital.trigger.txt")
+    blobCurrent.upload_blob("trigger me")
+
+
+@app.blob_trigger(arg_name="myblob", path="stage1/digital/{name}",
+                               connection="AzureWebJobsStorage") 
+def createDigital(myblob: func.InputStream):
+    logging.info(f"Python blob trigger function processed blob"
+                f"Name: {myblob.name}"
+                f"Blob Size: {myblob.length} bytes")
+    global digitalDirectory
+
+    connection_string = os.environ['AzureWebJobsStorage']
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    input_container = blob_service_client.get_container_client(container="stage1/digital")
+    blob = input_container.get_blob_client("digital.trigger.txt")
+    logging.info(f"Merge Directory: {merge_directory}")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(script_dir, "stage1.yaml"), "r") as f:
+        stage1_config = yaml.load(f, Loader=yaml.FullLoader)
+
+    digitalDirectory = setDigitalTransformation(stage1_config,merge_directory)
+
+    if blob.exists():
+        logging.debug(f"Deleting bucket file: digital.trigger.txt")
+        blob.delete_blob()
+
+    container_client_upload = blob_service_client.get_container_client(container="stage1/uploadCurrent")
+        # Note: A directory can't be created atomically in a bucket. So instead of using a
+        # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
+        #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
+    blobCurrent = container_client_upload.get_blob_client("uploadCurrent.trigger.txt")
+    blobCurrent.upload_blob("trigger me")
+
+
+
+@app.blob_trigger(arg_name="myblob", path="stage1/uploadCurrent/{name}",
+                               connection="AzureWebJobsStorage") 
+def uploadCurrentOrder(myblob: func.InputStream):
+    logging.info(f"Python blob trigger function processed blob"
+                f"Name: {myblob.name}"
+                f"Blob Size: {myblob.length} bytes")
+    connection_string = os.environ['AzureWebJobsStorage']
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    input_container = blob_service_client.get_container_client(container="stage1/uploadCurrent")
+    blob = input_container.get_blob_client("uploadCurrent.trigger.txt")
+
+    fileList = os.listdir(currentOrderDirectory)
+    for filename in fileList:
+        logging.info(f"FilesList: {filename}")
+        container_client_upload = blob_service_client.get_container_client(container="stage2/currentOder")
+        blob_client_upload = container_client_upload.get_blob_client(filename)
+
+        f = open(currentOrderDirectory+'\\'+filename, 'r',encoding='utf-8')
+        byt = f.read()
+        blob_client_upload.upload_blob(byt, blob_type="BlockBlob")
+
+    if blob.exists():
+        logging.debug(f"Deleting bucket file: digital.trigger.txt")
+        blob.delete_blob()
+    
+    container_client_upload = blob_service_client.get_container_client(container="stage1/uploadInstransit")
+        # Note: A directory can't be created atomically in a bucket. So instead of using a
+        # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
+        #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
+    blobCurrent = container_client_upload.get_blob_client("uploadInstransit.trigger.txt")
+    blobCurrent.upload_blob("trigger me")
+
+@app.blob_trigger(arg_name="myblob", path="stage1/uploadInstransit/{name}",
+                               connection="AzureWebJobsStorage") 
+def uploadIntransit(myblob: func.InputStream):
+    logging.info(f"Python blob trigger function processed blob"
+                f"Name: {myblob.name}"
+                f"Blob Size: {myblob.length} bytes")
+    connection_string = os.environ['AzureWebJobsStorage']
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    input_container = blob_service_client.get_container_client(container="stage1/uploadInstransit")
+    blob = input_container.get_blob_client("uploadInstransit.trigger.txt")
+
+    fileList = os.listdir(instransitDirectory)
+    for filename in fileList:
+        logging.info(f"FilesList: {filename}")
+        container_client_upload = blob_service_client.get_container_client(container="stage2/Intransit")
+        blob_client_upload = container_client_upload.get_blob_client(filename)
+
+        f = open(instransitDirectory+'\\'+filename, 'r',encoding='utf-8')
+        byt = f.read()
+        blob_client_upload.upload_blob(byt, blob_type="BlockBlob")
+
+    if blob.exists():
+        logging.debug(f"Deleting bucket file: digital.trigger.txt")
+        blob.delete_blob()
+    
+    container_client_upload = blob_service_client.get_container_client(container="stage1/uploadDigital")
+        # Note: A directory can't be created atomically in a bucket. So instead of using a
+        # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
+        #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
+    blobCurrent = container_client_upload.get_blob_client("uploadDigital.trigger.txt")
+    blobCurrent.upload_blob("trigger me")
+    shutil.rmtree(currentOrderDirectory)
+
+@app.blob_trigger(arg_name="myblob", path="stage1/uploadDigital/{name}",
+                               connection="AzureWebJobsStorage") 
+def uploadDigital(myblob: func.InputStream):
+    logging.info(f"Python blob trigger function processed blob"
+                f"Name: {myblob.name}"
+                f"Blob Size: {myblob.length} bytes")
+    connection_string = os.environ['AzureWebJobsStorage']
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    input_container = blob_service_client.get_container_client(container="stage1/uploadDigital")
+    blob = input_container.get_blob_client("uploadDigital.trigger.txt")
+
+    fileList = os.listdir(digitalDirectory)
+    for filename in fileList:
+        logging.info(f"FilesList: {filename}")
+        container_client_upload = blob_service_client.get_container_client(container="stage2/Digital")
+        blob_client_upload = container_client_upload.get_blob_client(filename)
+
+        f = open(digitalDirectory+'\\'+filename, 'r',encoding='utf-8')
+        byt = f.read()
+        blob_client_upload.upload_blob(byt, blob_type="BlockBlob")
+
+    if blob.exists():
+        logging.debug(f"Deleting bucket file: digital.trigger.txt")
+        blob.delete_blob()
+    
+    container_client_upload = blob_service_client.get_container_client(container="stage2")
+        # Note: A directory can't be created atomically in a bucket. So instead of using a
+        # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
+        #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
+    blobCurrent = container_client_upload.get_blob_client("sendToPrM.trigger.txt")
+    blobCurrent.upload_blob("trigger me")
+    shutil.rmtree(instransitDirectory)

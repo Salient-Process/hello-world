@@ -3,9 +3,12 @@ directories:
   input: /tmp/stage1/input
   error: /tmp/stage1/errors
   work: /tmp/stage1/.working
-  output: /tmp/stage2/input
+  merges: /tmp/stage1/mergesFiles
+  output: /tmp/stage2/input/
+  currentOrder: /tmp/stage2/input/currentOrder
+  instransit: /tmp/stage2/input/intransit
+  digital: /tmp/stage2/input/digital
 bucket-directories:
     input: stage1/input
     output: stage1/tmp
     errors: stage1/errors
-connection:
