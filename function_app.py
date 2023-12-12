@@ -113,7 +113,7 @@ def createCurrentOrder(myblob: func.InputStream):
     logging.info(f"Python blob trigger function processed blob"
                 f"Name: {myblob.name}"
                 f"Blob Size: {myblob.length} bytes")
-    logging.info(f"Merge Directory: {merge_directory}")
+
     global currentOrderDirectory
     connection_string = os.environ['AzureWebJobsStorage']
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -145,7 +145,6 @@ def createIntransitItem(myblob: func.InputStream):
                 f"Name: {myblob.name}"
                 f"Blob Size: {myblob.length} bytes")
     global instransitDirectory
-
     connection_string = os.environ['AzureWebJobsStorage']
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
     input_container = blob_service_client.get_container_client(container="stage1/intransit")
@@ -176,7 +175,6 @@ def createDigital(myblob: func.InputStream):
                 f"Name: {myblob.name}"
                 f"Blob Size: {myblob.length} bytes")
     global digitalDirectory
-
     connection_string = os.environ['AzureWebJobsStorage']
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
     input_container = blob_service_client.get_container_client(container="stage1/digital")
@@ -243,7 +241,6 @@ def uploadIntransit(myblob: func.InputStream):
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
     input_container = blob_service_client.get_container_client(container="stage1/uploadInstransit")
     blob = input_container.get_blob_client("uploadInstransit.trigger.txt")
-
     fileList = os.listdir(instransitDirectory)
     for filename in fileList:
         logging.info(f"FilesList: {filename}")
@@ -276,7 +273,6 @@ def uploadDigital(myblob: func.InputStream):
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
     input_container = blob_service_client.get_container_client(container="stage1/uploadDigital")
     blob = input_container.get_blob_client("uploadDigital.trigger.txt")
-
     fileList = os.listdir(digitalDirectory)
     for filename in fileList:
         logging.info(f"FilesList: {filename}")
