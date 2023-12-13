@@ -9,8 +9,7 @@ import time
 import json
 from script_util import convertDict
 from extract import runCF
-from merge import merge
-from createFiles import setCurrentOrder,setIntransitItem,setDigitalTransformation
+from merge import merge,setCurrentOrder,setIntransitItem,setDigitalTransformation
 
 
 app = func.FunctionApp()
