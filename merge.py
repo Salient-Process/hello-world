@@ -29,8 +29,6 @@ def merge(config, foldersPath):
         if re.search(r"\.csv\Z", files, re.IGNORECASE):
             shutil.move(full_path, final_directory)
 
-    shutil.rmtree(foldersPath)
-
     return final_directory
 
 if( __name__ == "__main__"):
