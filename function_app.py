@@ -103,6 +103,18 @@ def mergeFiles(myblob: func.InputStream):
     data['merge_directory'] = merge_directory
     json_data = json.dumps(data)
 
+    """
+    fileList = os.listdir(merge_directory)
+    for filename in fileList:
+        logging.info(f"FilesList: {filename}")
+        container_client_upload = blob_service_client.get_container_client(container="stage1/merge_directory")
+        blob_client_upload = container_client_upload.get_blob_client(filename)
+
+        f = open(merge_directory+'\\'+filename, 'r',encoding='utf-8')
+        byt = f.read()
+        blob_client_upload.upload_blob(byt, blob_type="BlockBlob")
+
+    """
     container_client_upload = blob_service_client.get_container_client(container="stage1/current")
         # Note: A directory can't be created atomically in a bucket. So instead of using a
         # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
@@ -123,8 +135,8 @@ def createCurrentOrder(myblob: func.InputStream):
                 f"Name: {myblob.name}"
                 f"Blob Size: {myblob.length} bytes")
     
-    global currentOrderDirectory
     connection_string = os.environ['AzureWebJobsStorage']
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(script_dir, "stage1.yaml"), "r") as f:
         stage1_config = yaml.load(f, Loader=yaml.FullLoader)
@@ -132,10 +144,12 @@ def createCurrentOrder(myblob: func.InputStream):
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
     input_container = blob_service_client.get_container_client(container="stage1/current")
     blob = input_container.get_blob_client("current.trigger.txt")
-
     data = convertDict(myblob)  
-    logging.info(f"Merge Directory: {data['merge_directory']}")
-    currentOrderDirectory = setCurrentOrder(stage1_config,data['merge_directory'])
+    
+    
+    merge_directory = data['merge_directory']
+    logging.info(f"Merge Directory: {merge_directory}")
+    currentOrderDirectory = setCurrentOrder(stage1_config,merge_directory)
 
     if blob.exists():
         logging.debug(f"Deleting bucket file: current.trigger.txt")
@@ -143,7 +157,7 @@ def createCurrentOrder(myblob: func.InputStream):
     
     dataf = {}
     dataf['currentOrderDirectory'] = currentOrderDirectory
-    dataf['merge_directory'] = data['merge_directory']
+    dataf['merge_directory'] = merge_directory
     json_data = json.dumps(dataf)
 
     container_client_upload = blob_service_client.get_container_client(container="stage1/intransit")
