@@ -95,10 +95,12 @@ def readFoldersAndJoin(path):
     return foldersName
 
 def createPlantMaterial(path,instransit):
-    #type_dictT = {'MANDT':'str','SPRAS':'str','PRODH':'str','VTEXT':'str'}
+    
+    logging.info("Calling Plant Material")
     type_dictT = {'PRODH':'str','ZZGLFUNC':'str','ZZGLVAR':'str','ZZGLBRAND':'str'}
     type_dictM = {'MATNR':'str','PRDHA':'str'}
     #Read the CSV's to create the table
+    logging.info(f"Reading plant material files in path: {path}")
     mvke = pd.read_csv(os.path.join(path,'MVKE.csv'),on_bad_lines='skip',low_memory=False)
     makt = pd.read_csv(os.path.join(path,'MAKT.csv'),on_bad_lines='skip',low_memory=False)
     t25a5 = pd.read_csv(os.path.join(path,'T25a5.csv'),on_bad_lines='skip',low_memory=False)
@@ -128,6 +130,7 @@ def createPlantMaterial(path,instransit):
 
     plantMaterial['ProductName'] = plantMaterial.ZZ_PROD_CAT.astype(str)+' - '+plantMaterial.BEZEK
     plantMaterial = plantMaterial.drop_duplicates()
+    logging.info("Done with Plant Material")
     return plantMaterial
 
 def format_datetime(dt_series):
