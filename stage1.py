@@ -399,6 +399,7 @@ def createInstansitItems(path,pathCSV):
 
     #plantMaterial = createPlantMaterial(path,True)
     #intransitItem = pd.merge(plt,plantMaterial,on = 'MATNR',how = 'inner')
+    intransitItem = plt
     intransitItem['LABST'] = intransitItem['LABST'].astype(str).str.replace('-','')
     intransitItem['LABST'] = intransitItem['LABST'].astype(float)
     intransitItem['MATNR_Ekpo'] = intransitItem.MATNR_Ekpo.apply(lambda x: str(x).lstrip('0'))
