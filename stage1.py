@@ -181,12 +181,14 @@ def createCurrentOrders(path,pathCSV):
     logging.info("Calling create CurrentOrder")
 
     type_dictV = {'VBELN':'str','POSNR':'float','MATNR':'str','NETWR':'str','ERNAM':'str','KWMENG':'float','KMEIN':'str','NTGEW':'float','ABGRU':'str','KBMENG':'float','LPRIO':'str','ERDAT':'str','ERZET':'str','WERKS':'str','BRGEW':'float','GEWEI':'str','WAERK':'str','PRODH':'str'}
-
+    logging.info(f"Path to read the files: {path}")
     vbap = pd.read_csv(os.path.join(path,'VBAP.csv'),on_bad_lines='skip',low_memory=False,dtype=type_dictV)
     vbak = pd.read_csv(os.path.join(path,'VBAK.csv'),on_bad_lines='skip',low_memory=False)
     vbep = pd.read_csv(os.path.join(path,'VBEP.csv'),on_bad_lines='skip',low_memory=False)
     kna1 = pd.read_csv(os.path.join(path,'KNA1.csv'),on_bad_lines='skip',low_memory=False)
     knvh = pd.read_csv(os.path.join(path,'KNVH.csv'),on_bad_lines='skip',low_memory=False)
+
+    logging.info("Was posible to read all the files")
 
     #Convert the values to match
     vbak['KUNNR'] = vbak['KUNNR'].astype(str)
@@ -235,6 +237,8 @@ def createCurrentOrders(path,pathCSV):
     #knvhf = knvh
     knvhf.drop_duplicates(subset=['KUNNR'],keep='first')
 
+    logging.info("Start to join tables")
+
     #join all the tables
     plantMaterial = createPlantMaterial(path,False)
     vbapk = pd.merge(vbap,vbak,on ='VBELN',how = 'inner')
@@ -262,6 +266,8 @@ def createCurrentOrders(path,pathCSV):
     currentOrder['MaterialCuts2'] = np.where(np.logical_and(currentOrder['MaterialCuts1'] == 0,currentOrder['MaterialCuts1'] !=0),currentOrder['NETWR'],((currentOrder.KWMENG - currentOrder.MaterialCuts1)*(currentOrder.NETWR/currentOrder.KWMENG)))
     currentOrder['MaterialCuts2'] = round(currentOrder.MaterialCuts2,2)
     currencyF = currentOrder['WAERK'].unique()
+
+    logging.info("Before Calling currency Function")
     for f in currencyF:
         if f != 'USD':
             currency = float(getCurrencyChange(path,f))
