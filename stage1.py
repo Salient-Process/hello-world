@@ -296,14 +296,14 @@ def createCurrentOrders(path,pathCSV):
     
     currentOrder = pd.merge(currentOrder,knvhf,on = 'KUNNR',how = 'inner')
     logging.info("Log before call plant Material")
-    plantMaterial = createPlantMaterial(path,False)
-    currentOrder = pd.merge(currentOrder,plantMaterial,on = ['MATNR','PRODH'],how = 'inner')
+    #plantMaterial = createPlantMaterial(path,False)
+    #currentOrder = pd.merge(currentOrder,plantMaterial,on = ['MATNR','PRODH'],how = 'inner')
     currentOrder['MATNR'] = currentOrder.MATNR.apply(lambda x: str(x).lstrip('0'))
     currentOrder = currentOrder.drop_duplicates()
     currentOrder.loc[currentOrder['ETENR'] != 1, ['Activity']] = 'Delivery Schedule Line'
     currentOrder['Type'] = 'Sales Order'
 
-    currentOrder = currentOrder[['ABGRU','Activity','AUART','BRGEW','BSTNK','CMGST','conf_total_quantity','confirmed_quantity_weight','ERDAT','ERDAT_Item','ETENR','GEWEI','Id','KBMENG','KMEIN','KUNNR','KWMENG','LIFSK','MAKTX','MaterialCuts1','MaterialCuts2','MaterialCuts3','MATNR','MBDAT','NAME1','NETWR','NETWR_CONVERTED','POSNR','ProductName','SD header creation date','Sold To Party Name','Type','unconf_total_quantity','VBELN','VBTYP','VDATU','VKORG','WAERK','WERKS','WMENG','ZZ_VDATU','ZZGLFUNC','ZZORATE']]
+    #currentOrder = currentOrder[['ABGRU','Activity','AUART','BRGEW','BSTNK','CMGST','conf_total_quantity','confirmed_quantity_weight','ERDAT','ERDAT_Item','ETENR','GEWEI','Id','KBMENG','KMEIN','KUNNR','KWMENG','LIFSK','MAKTX','MaterialCuts1','MaterialCuts2','MaterialCuts3','MATNR','MBDAT','NAME1','NETWR','NETWR_CONVERTED','POSNR','ProductName','SD header creation date','Sold To Party Name','Type','unconf_total_quantity','VBELN','VBTYP','VDATU','VKORG','WAERK','WERKS','WMENG','ZZ_VDATU','ZZGLFUNC','ZZORATE']]
 
     rows = len(currentOrder)
     currentOrder = pd.concat([currentOrder]*2, ignore_index=True)
@@ -390,8 +390,8 @@ def createInstansitItems(path,pathCSV):
  
     plt = pd.merge(vttl,plaf,on= ['MATNR','WERKS'],how ='left')
 
-    plantMaterial = createPlantMaterial(path,True)
-    intransitItem = pd.merge(plt,plantMaterial,on = 'MATNR',how = 'inner')
+    #plantMaterial = createPlantMaterial(path,True)
+    #intransitItem = pd.merge(plt,plantMaterial,on = 'MATNR',how = 'inner')
     intransitItem['LABST'] = intransitItem['LABST'].astype(str).str.replace('-','')
     intransitItem['LABST'] = intransitItem['LABST'].astype(float)
     intransitItem['MATNR_Ekpo'] = intransitItem.MATNR_Ekpo.apply(lambda x: str(x).lstrip('0'))
@@ -406,7 +406,7 @@ def createInstansitItems(path,pathCSV):
     intransitItem['Activity'] = 'Instransit Item'
     intransitItem['Id'] = intransitItem.WERKS+'-'+intransitItem.MATNR
     intransitItem['Type'] = 'Total Plant'
-    intransitItem =  intransitItem[['Activity','available_after_open_orders','BRGEW','CHARG','DPREG','EINDT','EINME','ERDAT_vttk','ERDAT_y','GSMNG','Id','INSME','LABST','LFDAT','LGMNG','LGORT','LGORT_Ekpo','MAKTX','MATNR','MBDAT','net_inventory_available','On_order_kpi','POSNR','ProductName','SPEME','STTRG','TKNUM','Type','UMLME','VBELN','VSTEL','WADAT','WERKS','ZZGLFUNC']]
+    #intransitItem =  intransitItem[['Activity','available_after_open_orders','BRGEW','CHARG','DPREG','EINDT','EINME','ERDAT_vttk','ERDAT_y','GSMNG','Id','INSME','LABST','LFDAT','LGMNG','LGORT','LGORT_Ekpo','MAKTX','MATNR','MBDAT','net_inventory_available','On_order_kpi','POSNR','ProductName','SPEME','STTRG','TKNUM','Type','UMLME','VBELN','VSTEL','WADAT','WERKS','ZZGLFUNC']]
     rows = len(intransitItem)
     intransitItem = pd.concat([intransitItem]*3,ignore_index=True)
     id = intransitItem.iloc[rows:rows*2].WERKS+'-'+intransitItem.iloc[rows:rows*2].MATNR+'-'+intransitItem.iloc[rows:rows*2].LGORT
