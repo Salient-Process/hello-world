@@ -324,11 +324,6 @@ def createInstansitItems(path,pathCSV):
     logging.info("Calling create IntransitItem")
     logging.info(f"Merge Path: {path}")
     logging.info(f"Final Path: {pathCSV}")
-    files = os.listdir(path)
-    for file in files:
-        logging.info(f"File Name in path: {file}")
-    #month = 'Nov'
-    #type_dictV = {'VBELN':'str','POSNR':'float','MATNR':'str','NETWR':'str','ERNAM':'str','KWMENG':'float','KMEIN':'str','NTGEW':'float','ABGRU':'str','KBMENG':'float','LPRIO':'str','ERDAT':'str','ERZET':'str','WERKS':'str','BRGEW':'float','GEWEI':'str','WAERK':'str','PRODH':'str'}
     logging.info("Reading all the files")
     vbap = pd.read_csv(os.path.join(path,'VBAP.csv'),on_bad_lines='skip',low_memory=False)
     lips = pd.read_csv(os.path.join(path,'LIPS.csv'),on_bad_lines='skip',low_memory=False)
@@ -378,7 +373,7 @@ def createInstansitItems(path,pathCSV):
     vttk['DPABF'] = format_datetime(vttk['DPABF'])
     vttk['DTABF']= vttk['DTABF'].astype(str)
     vttk['DTABF'] = format_datetime(vttk['DTABF'])
-
+    logging.info("All the fields converted into date")
     #Start Joins
     lipk = pd.merge(lips,likp,on = 'VBELN',how ='inner')
 
@@ -396,7 +391,7 @@ def createInstansitItems(path,pathCSV):
     vttl = pd.merge(vlim,vttpk,on= 'VBELN',how ='inner')
  
     plt = pd.merge(vttl,plaf,on= ['MATNR','WERKS'],how ='left')
-
+    logging.info("Joins Completed")
     #plantMaterial = createPlantMaterial(path,True)
     #intransitItem = pd.merge(plt,plantMaterial,on = 'MATNR',how = 'inner')
     intransitItem = plt
@@ -415,6 +410,7 @@ def createInstansitItems(path,pathCSV):
     intransitItem['Id'] = intransitItem.WERKS+'-'+intransitItem.MATNR
     intransitItem['Type'] = 'Total Plant'
     #intransitItem =  intransitItem[['Activity','available_after_open_orders','BRGEW','CHARG','DPREG','EINDT','EINME','ERDAT_vttk','ERDAT_y','GSMNG','Id','INSME','LABST','LFDAT','LGMNG','LGORT','LGORT_Ekpo','MAKTX','MATNR','MBDAT','net_inventory_available','On_order_kpi','POSNR','ProductName','SPEME','STTRG','TKNUM','Type','UMLME','VBELN','VSTEL','WADAT','WERKS','ZZGLFUNC']]
+    logging.info("Start to add id and activity")
     rows = len(intransitItem)
     intransitItem = pd.concat([intransitItem]*3,ignore_index=True)
     id = intransitItem.iloc[rows:rows*2].WERKS+'-'+intransitItem.iloc[rows:rows*2].MATNR+'-'+intransitItem.iloc[rows:rows*2].LGORT
