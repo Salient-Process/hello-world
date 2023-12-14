@@ -244,7 +244,6 @@ def createCurrentOrders(path,pathCSV):
     logging.info("Start to join tables")
 
     #join all the tables
-    plantMaterial = createPlantMaterial(path,False)
     vbapk = pd.merge(vbap,vbak,on ='VBELN',how = 'inner')
     vbapk = vbapk.drop_duplicates()
     vbepk = pd.merge(vbapk,vbep,on = ['VBELN','POSNR'],how = 'inner')
@@ -296,6 +295,8 @@ def createCurrentOrders(path,pathCSV):
     currentOrder['Weight'] = currentOrder.BRGEW
     
     currentOrder = pd.merge(currentOrder,knvhf,on = 'KUNNR',how = 'inner')
+    logging.info("Log before call plant Material")
+    plantMaterial = createPlantMaterial(path,False)
     currentOrder = pd.merge(currentOrder,plantMaterial,on = ['MATNR','PRODH'],how = 'inner')
     currentOrder['MATNR'] = currentOrder.MATNR.apply(lambda x: str(x).lstrip('0'))
     currentOrder = currentOrder.drop_duplicates()
