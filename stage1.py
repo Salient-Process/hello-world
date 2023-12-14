@@ -324,6 +324,9 @@ def createInstansitItems(path,pathCSV):
     logging.info("Calling create IntransitItem")
     logging.info(f"Merge Path: {path}")
     logging.info(f"Final Path: {pathCSV}")
+    files = os.listdir(path)
+    for file in files:
+        logging.info(f"File Name in path: {file}")
     #month = 'Nov'
     #type_dictV = {'VBELN':'str','POSNR':'float','MATNR':'str','NETWR':'str','ERNAM':'str','KWMENG':'float','KMEIN':'str','NTGEW':'float','ABGRU':'str','KBMENG':'float','LPRIO':'str','ERDAT':'str','ERZET':'str','WERKS':'str','BRGEW':'float','GEWEI':'str','WAERK':'str','PRODH':'str'}
     logging.info("Reading all the files")

@@ -59,7 +59,7 @@ def setIntransitItem(config,workDirectory):
         logging.info("Calling create Instransit Item")
         createInstansitItems(workDirectory,final_directory)
     except:
-        raise Exception('Was nos posible to create CurrentOrder')
+        raise Exception('Was nos posible to create Intransit Item')
 
     return final_directory
 
@@ -75,7 +75,7 @@ def setDigitalTransformation(config,workDirectory):
         logging.info("Calling create Digital Item")
         createDigitalTransformation(workDirectory,final_directory)
     except:
-        raise Exception('Was nos posible to create CurrentOrder')
+        raise Exception('Was nos posible to create Digital')
     
     shutil.rmtree(workDirectory)
 
