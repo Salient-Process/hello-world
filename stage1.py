@@ -318,6 +318,7 @@ def createCurrentOrders(path,pathCSV):
     write_in_chunks(currentOrder,'CurrentOrder.csv',fileName,pathCSV)
 
 def createInstansitItems(path,pathCSV):
+
     mydate = datetime.now()
     month = mydate.strftime("%b")
     logging.info("Calling create IntransitItem")
@@ -325,7 +326,7 @@ def createInstansitItems(path,pathCSV):
     logging.info(f"Final Path: {pathCSV}")
     #month = 'Nov'
     #type_dictV = {'VBELN':'str','POSNR':'float','MATNR':'str','NETWR':'str','ERNAM':'str','KWMENG':'float','KMEIN':'str','NTGEW':'float','ABGRU':'str','KBMENG':'float','LPRIO':'str','ERDAT':'str','ERZET':'str','WERKS':'str','BRGEW':'float','GEWEI':'str','WAERK':'str','PRODH':'str'}
-
+    logging.info("Reading all the files")
     vbap = pd.read_csv(os.path.join(path,'VBAP.csv'),on_bad_lines='skip',low_memory=False)
     lips = pd.read_csv(os.path.join(path,'LIPS.csv'),on_bad_lines='skip',low_memory=False)
     likp = pd.read_csv(os.path.join(path,'LIKP.csv'),on_bad_lines='skip',low_memory=False)
@@ -335,6 +336,9 @@ def createInstansitItems(path,pathCSV):
     mard = pd.read_csv(os.path.join(path,'MARD.csv'),on_bad_lines='skip',low_memory=False)
     eket = pd.read_csv(os.path.join(path,'EKET.csv'),on_bad_lines='skip',low_memory=False)
     plaf = pd.read_csv(os.path.join(path,'PLAF.csv'),on_bad_lines='skip',low_memory=False)
+    
+    logging.info("Was posible to read the files")
+    
     #Clean VBAP
     vbap = vbap[['VBELN','POSNR','KWMENG','NETWR']]
     
