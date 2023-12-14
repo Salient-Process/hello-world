@@ -182,6 +182,7 @@ def createCurrentOrders(path,pathCSV):
 
     type_dictV = {'VBELN':'str','POSNR':'float','MATNR':'str','NETWR':'str','ERNAM':'str','KWMENG':'float','KMEIN':'str','NTGEW':'float','ABGRU':'str','KBMENG':'float','LPRIO':'str','ERDAT':'str','ERZET':'str','WERKS':'str','BRGEW':'float','GEWEI':'str','WAERK':'str','PRODH':'str'}
     logging.info(f"Path to read the files: {path}")
+    logging.info(f"You can read the files: {os.access(path,os.R_OK)}")
     vbap = pd.read_csv(os.path.join(path,'VBAP.csv'),on_bad_lines='skip',low_memory=False,dtype=type_dictV)
     vbak = pd.read_csv(os.path.join(path,'VBAK.csv'),on_bad_lines='skip',low_memory=False)
     vbep = pd.read_csv(os.path.join(path,'VBEP.csv'),on_bad_lines='skip',low_memory=False)
