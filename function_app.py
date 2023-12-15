@@ -281,7 +281,7 @@ def uploadCurrentOrder(myblob: func.InputStream):
         logging.debug(f"Deleting bucket file: digital.trigger.txt")
         blob.delete_blob()
     
-    container_client_upload = blob_service_client.get_container_client(container="stage1/uploadInstransit")
+    container_client_intransit = blob_service_client.get_container_client(container="stage1/uploadInstransit")
         # Note: A directory can't be created atomically in a bucket. So instead of using a
         # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
         #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
@@ -292,7 +292,7 @@ def uploadCurrentOrder(myblob: func.InputStream):
     dataf['digitalDirectory'] = data['digitalDirectory']
     json_data = json.dumps(dataf)
     
-    blobCurrent = container_client_upload.get_blob_client("uploadInstransit.trigger.txt")
+    blobCurrent = container_client_intransit.get_blob_client("uploadInstransit.trigger.txt")
     blobCurrent.upload_blob(json_data)
 
 @app.blob_trigger(arg_name="myblob", path="stage1/uploadInstransit/{name}",
@@ -328,7 +328,7 @@ def uploadIntransit(myblob: func.InputStream):
         logging.debug(f"Deleting bucket file: digital.trigger.txt")
         blob.delete_blob()
     
-    container_client_upload = blob_service_client.get_container_client(container="stage1/uploadDigital")
+    container_client_digital = blob_service_client.get_container_client(container="stage1/uploadDigital")
         # Note: A directory can't be created atomically in a bucket. So instead of using a
         # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
         #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
@@ -339,7 +339,7 @@ def uploadIntransit(myblob: func.InputStream):
     json_data = json.dumps(dataf)
     
     
-    blobCurrent = container_client_upload.get_blob_client("uploadDigital.trigger.txt")
+    blobCurrent = container_client_digital.get_blob_client("uploadDigital.trigger.txt")
     blobCurrent.upload_blob(json_data)
     shutil.rmtree(currentOrderDirectory)
 
@@ -376,11 +376,11 @@ def uploadDigital(myblob: func.InputStream):
         logging.debug(f"Deleting bucket file: digital.trigger.txt")
         blob.delete_blob()
     
-    container_client_upload = blob_service_client.get_container_client(container="stage2")
+    container_client_stage2 = blob_service_client.get_container_client(container="stage2")
         # Note: A directory can't be created atomically in a bucket. So instead of using a
         # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
         #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
-    blobCurrent = container_client_upload.get_blob_client("sendToPrM.trigger.txt")
+    blobCurrent = container_client_stage2.get_blob_client("sendToPrM.trigger.txt")
     blobCurrent.upload_blob("trigger me")
     shutil.rmtree(instransitDirectory)
     time.sleep(30)
