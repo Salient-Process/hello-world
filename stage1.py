@@ -612,12 +612,13 @@ def createDigitalTransformation(path,pathCSV):
     logging.info("Start to clean tables")
     digital = pd.concat([digital1,digital2],ignore_index=True)
     digital['Id'] = digital.VGBEL.astype(str)+'-'+digital.VGPOS.astype(str)
+    """
     pivot = digital[['Id','LGMNG','LFIMG','Activity']]
     digital.drop(columns=['LGMNG','LFIMG','POSNR'],inplace=True)
     pivot = pivot.groupby(['Id','Activity'],as_index=False)[['LGMNG','LFIMG']].sum()
     digital = digital.drop_duplicates()
     digital = pd.merge(digital,pivot,on = ['Id','Activity'],how = 'left')
-
+    """
     logging.info("Call before start chunks")
 
     fileName = f'Digital_{month}'
