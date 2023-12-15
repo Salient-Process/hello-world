@@ -126,6 +126,7 @@ def createPlantMaterail(myblob: func.InputStream):
     data = convertDict(myblob) 
 
     merge_directory = data['merge_directory']
+    logging.info(f"Merge Directory: {merge_directory}")
 
     setPlantMaterial(stage1_config,merge_directory)
 

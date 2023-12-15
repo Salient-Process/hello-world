@@ -50,7 +50,7 @@ def setCurrentOrder(config,workDirectory):
 def setPlantMaterial(config,workDirectory):
     
     try:
-        logging.info("Calling create Instransit Item")
+        logging.info("Calling create Plant Material")
         createPlantMaterial(workDirectory,True)
     except:
         raise Exception('Was nos posible to create Intransit Item')
@@ -80,7 +80,7 @@ def setDigitalTransformation(config,workDirectory):
     if not os.path.exists(final_directory): os.makedirs(final_directory)
 
     try:
-        logging.info("Calling create Digital Item")
+        logging.info("Calling create Digital")
         createDigitalTransformation(workDirectory,final_directory)
     except:
         raise Exception('Was nos posible to create Digital')

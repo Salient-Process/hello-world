@@ -101,13 +101,14 @@ def createPlantMaterial(path,intransit):
     type_dictM = {'MATNR':'str','PRDHA':'str'}
     #Read the CSV's to create the table
     logging.info(f"Reading plant material files in path: {path}")
+
     mvke = pd.read_csv(os.path.join(path,'MVKE.csv'),on_bad_lines='skip',low_memory=False)
     makt = pd.read_csv(os.path.join(path,'MAKT.csv'),on_bad_lines='skip',low_memory=False)
     t25a5 = pd.read_csv(os.path.join(path,'T25a5.csv'),on_bad_lines='skip',low_memory=False)
     t179t = pd.read_csv(os.path.join(path,'t179t.csv'),on_bad_lines='skip',low_memory=False,dtype = type_dictT)
     mara = pd.read_csv(os.path.join(path,'mara.csv'),on_bad_lines='skip',low_memory=False,dtype = type_dictM)
 
-    
+    logging.info("Was posible to read the files")
     makt = makt.drop_duplicates()
     makt = makt.drop_duplicates(subset=['MATNR'])
     """
@@ -126,10 +127,14 @@ def createPlantMaterial(path,intransit):
     t179t['ZZGLFUNC'].astype(str).replace('', np.nan, inplace=True)
     t179t.dropna(subset=['ZZGLFUNC'], inplace=True)
 
+    logging.info("Clean the cvs files")
+
     mavkte_name = pd.merge(mvke,t25a5,on='ZZ_PROD_CAT',how = 'inner')
     mart = pd.merge(t179t,mara,on = 'PRODH',how = 'inner')
     mavkte = pd.merge(mart,makt,on = 'MATNR',how = 'inner')
     plantMaterial = pd.merge(mavkte,mavkte_name,on = 'MATNR',how='inner')
+
+    logging.info("Joins completed")
 
     plantMaterial['ProductName'] = plantMaterial.ZZ_PROD_CAT.astype(str)+' - '+plantMaterial.BEZEK
     plantMaterial = plantMaterial.drop_duplicates()
