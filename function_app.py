@@ -9,7 +9,7 @@ import time
 import json
 from script_util import convertDict
 from extract import runCF
-from merge import merge,setCurrentOrder,setIntransitItem,setDigitalTransformation
+from merge import merge,setCurrentOrder,setIntransitItem,setDigitalTransformation,setPlantMaterial
 
 
 app = func.FunctionApp()
@@ -101,15 +101,49 @@ def mergeFiles(myblob: func.InputStream):
     data = {}
     data['merge_directory'] = merge_directory
     json_data = json.dumps(data)
-    container_client_upload = blob_service_client.get_container_client(container="stage1/current")
-    blobCurrent = container_client_upload.get_blob_client("current.trigger.txt")
+    container_client_upload = blob_service_client.get_container_client(container="stage1/plantMaterial")
+    blobCurrent = container_client_upload.get_blob_client("plantMaterial.trigger.txt")
     blobCurrent.upload_blob(json_data)
 
     if blob.exists():
         logging.debug(f"Deleting bucket file: merge.trigger.txt")
         blob.delete_blob()
+    
 
+@app.blob_trigger(arg_name="myblob", path="stage1/plantMaterial/{name}",
+                               connection="AzureWebJobsStorage") 
+def createPlantMaterail(myblob: func.InputStream):
+    logging.info(f"Python blob trigger function processed blob"
+                f"Name: {myblob.name}"
+                f"Blob Size: {myblob.length} bytes")
 
+    connection_string = os.environ['AzureWebJobsStorage']
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(script_dir, "stage1.yaml"), "r") as f:
+        stage1_config = yaml.load(f, Loader=yaml.FullLoader)
+
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    input_container = blob_service_client.get_container_client(container="stage1/plantMaterial")
+    blob = input_container.get_blob_client("plantMaterial.trigger.txt")
+    data = convertDict(myblob) 
+
+    merge_directory = data['merge_directory']
+
+    setPlantMaterial(stage1_config,merge_directory)
+
+    if blob.exists():
+        logging.debug(f"Deleting bucket file: merge.trigger.txt")
+        blob.delete_blob()
+
+    dataf = {}
+    dataf['merge_directory'] = merge_directory
+    json_data = json.dumps(dataf)
+    container_client_upload = blob_service_client.get_container_client(container="stage1/current")
+    blobCurrent = container_client_upload.get_blob_client("current.trigger.txt")
+    blobCurrent.upload_blob(json_data)
+
+   
 
 @app.blob_trigger(arg_name="myblob", path="stage1/current/{name}",
                                connection="AzureWebJobsStorage") 
@@ -335,3 +369,4 @@ def uploadDigital(myblob: func.InputStream):
     blob_client.upload_blob(input_stream, blob_type="BlockBlob")
 
     shutil.rmtree(instransitDirectory)                                                                                                                                       
+

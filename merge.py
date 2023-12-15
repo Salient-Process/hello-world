@@ -3,7 +3,7 @@ import shutil
 import logging
 import re
 import time
-from stage1 import readFoldersAndJoin,createCurrentOrders,createInstansitItems,createDigitalTransformation
+from stage1 import readFoldersAndJoin,createCurrentOrders,createInstansitItems,createDigitalTransformation,createPlantMaterial
 
 
 def merge(config, foldersPath):
@@ -47,6 +47,14 @@ def setCurrentOrder(config,workDirectory):
 
     return final_directory
 
+def setPlantMaterial(config,workDirectory):
+    
+    try:
+        logging.info("Calling create Instransit Item")
+        createPlantMaterial(workDirectory,True)
+    except:
+        raise Exception('Was nos posible to create Intransit Item')
+
 def setIntransitItem(config,workDirectory):
 
     instransit = config["directories"]["instransit"]
@@ -88,3 +96,4 @@ if( __name__ == "__main__"):
     setCurrentOrder()
     setIntransitItem()
     setDigitalTransformation()
+    setPlantMaterial()

@@ -196,7 +196,7 @@ def createCurrentOrders(path,pathCSV):
     vbep = pd.read_csv(os.path.join(path,'VBEP.csv'),on_bad_lines='skip',low_memory=False)
     kna1 = pd.read_csv(os.path.join(path,'KNA1.csv'),on_bad_lines='skip',low_memory=False)
     knvh = pd.read_csv(os.path.join(path,'KNVH.csv'),on_bad_lines='skip',low_memory=False)
-    plantMaterial = pd.read_csv(os.path.join(path,'plantMaterial.csv'),on_bad_lines='skipe',low_memory=False,dtype=type_dictPM)
+    plantMaterial = pd.read_csv(os.path.join(path,'plantMaterial.csv'),on_bad_lines='skip',low_memory=False,dtype=type_dictPM)
 
     logging.info("Was posible to read all the files")
 
@@ -344,7 +344,7 @@ def createInstansitItems(path,pathCSV):
     mard = pd.read_csv(os.path.join(path,'MARD.csv'),on_bad_lines='skip',low_memory=False)
     eket = pd.read_csv(os.path.join(path,'EKET.csv'),on_bad_lines='skip',low_memory=False)
     plaf = pd.read_csv(os.path.join(path,'PLAF.csv'),on_bad_lines='skip',low_memory=False)
-    plantMaterial = pd.read_csv(os.path.join(path,'plantMaterial.csv'),on_bad_lines='skipe',low_memory=False,dtype=type_dictPM)
+    plantMaterial = pd.read_csv(os.path.join(path,'plantMaterial.csv'),on_bad_lines='skip',low_memory=False,dtype=type_dictPM)
     
     logging.info("Was posible to read the files")
     
