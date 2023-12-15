@@ -252,13 +252,17 @@ def uploadCurrentOrder(myblob: func.InputStream):
     logging.info(f"Python blob trigger function processed blob"
                 f"Name: {myblob.name}"
                 f"Blob Size: {myblob.length} bytes")
+    
     connection_string = os.environ['AzureWebJobsStorage']
+
+
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
     input_container = blob_service_client.get_container_client(container="stage1/uploadCurrent")
     blob = input_container.get_blob_client("uploadCurrent.trigger.txt")
     data = convertDict(myblob)
     currentOrderDirectory = data['currentOrderDirectory']
-    merge_directory = data['merge_directory']
+    logging.info(f"Current Order Directory: {currentOrderDirectory}")
+
     fileList = os.listdir(currentOrderDirectory)
     for filename in fileList:
         logging.info(f"FilesList: {filename}")
