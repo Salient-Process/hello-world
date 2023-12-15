@@ -261,6 +261,8 @@ def uploadCurrentOrder(myblob: func.InputStream):
     blob = input_container.get_blob_client("uploadCurrent.trigger.txt")
     data = convertDict(myblob)
     currentOrderDirectory = data['currentOrderDirectory']
+    instransitDirectory = data['instransitDirectory']
+    digitalDirectory = data['digitalDirectory']
     logging.info(f"Current Order Directory: {currentOrderDirectory}")
 
     fileList = os.listdir(currentOrderDirectory)
@@ -275,9 +277,9 @@ def uploadCurrentOrder(myblob: func.InputStream):
         blob.delete_blob()
     
     dataf = {}
-    dataf['currentOrderDirectory'] = data['currentOrderDirectory']
-    dataf['instransitDirectory'] = data['instransitDirectory']
-    dataf['digitalDirectory'] = data['digitalDirectory']
+    dataf['currentOrderDirectory'] = currentOrderDirectory
+    dataf['instransitDirectory'] = instransitDirectory
+    dataf['digitalDirectory'] = digitalDirectory
     json_data = json.dumps(dataf)
     
 
@@ -295,6 +297,7 @@ def uploadIntransit(myblob: func.InputStream):
     data = convertDict(myblob)
     instransitDirectory =  data['instransitDirectory']
     currentOrderDirectory =  data['currentOrderDirectory']
+    digitalDirectory = data['digitalDirectory']
 
     connection_string = os.environ['AzureWebJobsStorage']
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
@@ -319,8 +322,8 @@ def uploadIntransit(myblob: func.InputStream):
         blob.delete_blob()
 
     dataf = {}
-    dataf['instransitDirectory'] = data['instransitDirectory']
-    dataf['digitalDirectory'] = data['digitalDirectory']
+    dataf['instransitDirectory'] = instransitDirectory
+    dataf['digitalDirectory'] = digitalDirectory
     json_data = json.dumps(dataf)
     
     blob_client = blob_service_client.get_blob_client(container="stage1/uploadDigital", blob="uploadDigital.trigger.txt")
