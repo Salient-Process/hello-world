@@ -101,12 +101,18 @@ def createPlantMaterial(path,intransit):
     type_dictM = {'MATNR':'str','PRDHA':'str'}
     #Read the CSV's to create the table
     logging.info(f"Reading plant material files in path: {path}")
+    logging.info(f"You can read the files: {os.access(path,os.R_OK)}")
 
     mvke = pd.read_csv(os.path.join(path,'MVKE.csv'),on_bad_lines='skip',low_memory=False)
+    logging.info("First File")
     makt = pd.read_csv(os.path.join(path,'MAKT.csv'),on_bad_lines='skip',low_memory=False)
+    logging.info("Second File")
     t25a5 = pd.read_csv(os.path.join(path,'T25a5.csv'),on_bad_lines='skip',low_memory=False)
+    logging.info("Third File")
     t179t = pd.read_csv(os.path.join(path,'t179t.csv'),on_bad_lines='skip',low_memory=False,dtype = type_dictT)
+    logging.info("Fourth File")
     mara = pd.read_csv(os.path.join(path,'mara.csv'),on_bad_lines='skip',low_memory=False,dtype = type_dictM)
+    logging.info("Fifth File")
 
     logging.info("Was posible to read the files")
     makt = makt.drop_duplicates()
