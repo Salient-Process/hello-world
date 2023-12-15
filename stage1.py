@@ -469,8 +469,7 @@ def deleteData(path,foldersName):
 
 def createDigitalTransformation(path,pathCSV):
     mydate = datetime.now()
-    #month = mydate.strftime("%d_%b")
-    month = 'Nov'
+    month = mydate.strftime("%d_%b")
 
     vbap = pd.read_csv(os.path.join(path,'VBAP.csv'),on_bad_lines='skip',low_memory=False)
     vbak = pd.read_csv(os.path.join(path,'VBAK.csv'),on_bad_lines='skip',low_memory=False)
@@ -610,6 +609,7 @@ def createDigitalTransformation(path,pathCSV):
     digital2 = digital2.loc[((digital2['Activity'] != 'Delivery Schedule Line') & ( digital2['ETENR'] == 1 )) 
             | ((digital2['Activity'] == 'Delivery Schedule Line') & ( digital2['ETENR'] != 1 ))]
 
+    logging.info("Start to clean tables")
     digital = pd.concat([digital1,digital2],ignore_index=True)
     digital['Id'] = digital.VGBEL.astype(str)+'-'+digital.VGPOS.astype(str)
     pivot = digital[['Id','LGMNG','LFIMG','Activity']]
@@ -617,6 +617,8 @@ def createDigitalTransformation(path,pathCSV):
     pivot = pivot.groupby(['Id','Activity'],as_index=False)[['LGMNG','LFIMG']].sum()
     digital = digital.drop_duplicates()
     digital = pd.merge(digital,pivot,on = ['Id','Activity'],how = 'left')
+
+    logging.info("Call before start chunks")
 
     fileName = f'Digital_{month}'
     write_in_chunks(digital,'Digital.csv',fileName,pathCSV)
