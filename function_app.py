@@ -11,7 +11,7 @@ from script_util import convertDict
 from extract import runCF
 from merge import merge,setCurrentOrder,setIntransitItem,setDigitalTransformation,setPlantMaterial
 
-
+#test
 app = func.FunctionApp()
 
 @app.blob_trigger(arg_name="myblob", path="stage1/input/{name}",
