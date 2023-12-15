@@ -94,7 +94,7 @@ def readFoldersAndJoin(path):
 
     return foldersName
 
-def createPlantMaterial(path,instransit):
+def createPlantMaterial(path,intransit):
     
     logging.info("Calling Plant Material")
     type_dictT = {'PRODH':'str','ZZGLFUNC':'str','ZZGLVAR':'str','ZZGLBRAND':'str'}
@@ -110,11 +110,14 @@ def createPlantMaterial(path,instransit):
     
     makt = makt.drop_duplicates()
     makt = makt.drop_duplicates(subset=['MATNR'])
+    """
     if instransit:
         mvke = mvke[['MATNR','ZZ_PROD_CAT']]
         mvke = mvke.drop_duplicates()
+        MATNR;ZZ_PROD_CAT;VMSTA;ZZ_ABC
     else:
         mvke = mvke[['MATNR','ZZ_PROD_CAT','VMSTA']]
+    """
     
     t25a5.rename(columns={'WWPRC':'ZZ_PROD_CAT'},inplace = True)
     t25a5 = t25a5.drop_duplicates()
@@ -131,7 +134,8 @@ def createPlantMaterial(path,instransit):
     plantMaterial['ProductName'] = plantMaterial.ZZ_PROD_CAT.astype(str)+' - '+plantMaterial.BEZEK
     plantMaterial = plantMaterial.drop_duplicates()
     logging.info("Done with Plant Material")
-    return plantMaterial
+    file = os.path.join(path,"plantMaterial.csv")
+    plantMaterial.to_csv(file,index=False)
 
 def format_datetime(dt_series):
 
@@ -180,10 +184,11 @@ def cmgst(row):
 def createCurrentOrders(path,pathCSV):
     #Read the CSV's to create the table
     mydate = datetime.now()
-    month = mydate.strftime("%b")
+    month = mydate.strftime("%d_%b")
     logging.info("Calling create CurrentOrder")
 
     type_dictV = {'VBELN':'str','POSNR':'float','MATNR':'str','NETWR':'str','ERNAM':'str','KWMENG':'float','KMEIN':'str','NTGEW':'float','ABGRU':'str','KBMENG':'float','LPRIO':'str','ERDAT':'str','ERZET':'str','WERKS':'str','BRGEW':'float','GEWEI':'str','WAERK':'str','PRODH':'str'}
+    type_dictPM = {'PRODH':'str','ZZGLFUNC':'str','ZZGLVAR':'str','ZZGLBRAND':'str','MATNR':'str','MAKTX':'str','ZZ_PROD_CAT':'float','VMSTA':'float','BEZEK':'str','ProductName':'str'}
     logging.info(f"Path to read the files: {path}")
     logging.info(f"You can read the files: {os.access(path,os.R_OK)}")
     vbap = pd.read_csv(os.path.join(path,'VBAP.csv'),on_bad_lines='skip',low_memory=False,dtype=type_dictV)
@@ -191,6 +196,7 @@ def createCurrentOrders(path,pathCSV):
     vbep = pd.read_csv(os.path.join(path,'VBEP.csv'),on_bad_lines='skip',low_memory=False)
     kna1 = pd.read_csv(os.path.join(path,'KNA1.csv'),on_bad_lines='skip',low_memory=False)
     knvh = pd.read_csv(os.path.join(path,'KNVH.csv'),on_bad_lines='skip',low_memory=False)
+    plantMaterial = pd.read_csv(os.path.join(path,'plantMaterial.csv'),on_bad_lines='skipe',low_memory=False,dtype=type_dictPM)
 
     logging.info("Was posible to read all the files")
 
@@ -297,13 +303,14 @@ def createCurrentOrders(path,pathCSV):
     currentOrder = pd.merge(currentOrder,knvhf,on = 'KUNNR',how = 'inner')
     logging.info("Log before call plant Material")
     #plantMaterial = createPlantMaterial(path,False)
-    #currentOrder = pd.merge(currentOrder,plantMaterial,on = ['MATNR','PRODH'],how = 'inner')
+    plantMaterial.drop('ZZ_ABC',axis=1,inplace=True)
+    currentOrder = pd.merge(currentOrder,plantMaterial,on = ['MATNR','PRODH'],how = 'inner')
     currentOrder['MATNR'] = currentOrder.MATNR.apply(lambda x: str(x).lstrip('0'))
     currentOrder = currentOrder.drop_duplicates()
     currentOrder.loc[currentOrder['ETENR'] != 1, ['Activity']] = 'Delivery Schedule Line'
     currentOrder['Type'] = 'Sales Order'
 
-    #currentOrder = currentOrder[['ABGRU','Activity','AUART','BRGEW','BSTNK','CMGST','conf_total_quantity','confirmed_quantity_weight','ERDAT','ERDAT_Item','ETENR','GEWEI','Id','KBMENG','KMEIN','KUNNR','KWMENG','LIFSK','MAKTX','MaterialCuts1','MaterialCuts2','MaterialCuts3','MATNR','MBDAT','NAME1','NETWR','NETWR_CONVERTED','POSNR','ProductName','SD header creation date','Sold To Party Name','Type','unconf_total_quantity','VBELN','VBTYP','VDATU','VKORG','WAERK','WERKS','WMENG','ZZ_VDATU','ZZGLFUNC','ZZORATE']]
+    currentOrder = currentOrder[['ABGRU','Activity','AUART','BRGEW','BSTNK','CMGST','conf_total_quantity','confirmed_quantity_weight','ERDAT','ERDAT_Item','ETENR','GEWEI','Id','KBMENG','KMEIN','KUNNR','KWMENG','LIFSK','MAKTX','MaterialCuts1','MaterialCuts2','MaterialCuts3','MATNR','MBDAT','NAME1','NETWR','NETWR_CONVERTED','POSNR','ProductName','SD header creation date','Sold To Party Name','Type','unconf_total_quantity','VBELN','VBTYP','VDATU','VKORG','WAERK','WERKS','WMENG','ZZ_VDATU','ZZGLFUNC','ZZORATE']]
 
     rows = len(currentOrder)
     currentOrder = pd.concat([currentOrder]*2, ignore_index=True)
@@ -320,11 +327,14 @@ def createCurrentOrders(path,pathCSV):
 def createInstansitItems(path,pathCSV):
 
     mydate = datetime.now()
-    month = mydate.strftime("%b")
+    month = mydate.strftime("%d_%b")
     logging.info("Calling create IntransitItem")
     logging.info(f"Merge Path: {path}")
     logging.info(f"Final Path: {pathCSV}")
     logging.info("Reading all the files")
+
+    type_dictPM = {'PRODH':'str','ZZGLFUNC':'str','ZZGLVAR':'str','ZZGLBRAND':'str','MATNR':'str','MAKTX':'str','ZZ_PROD_CAT':'float','VMSTA':'float','BEZEK':'str','ProductName':'str'}
+
     vbap = pd.read_csv(os.path.join(path,'VBAP.csv'),on_bad_lines='skip',low_memory=False)
     lips = pd.read_csv(os.path.join(path,'LIPS.csv'),on_bad_lines='skip',low_memory=False)
     likp = pd.read_csv(os.path.join(path,'LIKP.csv'),on_bad_lines='skip',low_memory=False)
@@ -334,6 +344,7 @@ def createInstansitItems(path,pathCSV):
     mard = pd.read_csv(os.path.join(path,'MARD.csv'),on_bad_lines='skip',low_memory=False)
     eket = pd.read_csv(os.path.join(path,'EKET.csv'),on_bad_lines='skip',low_memory=False)
     plaf = pd.read_csv(os.path.join(path,'PLAF.csv'),on_bad_lines='skip',low_memory=False)
+    plantMaterial = pd.read_csv(os.path.join(path,'plantMaterial.csv'),on_bad_lines='skipe',low_memory=False,dtype=type_dictPM)
     
     logging.info("Was posible to read the files")
     
@@ -393,8 +404,10 @@ def createInstansitItems(path,pathCSV):
     plt = pd.merge(vttl,plaf,on= ['MATNR','WERKS'],how ='left')
     logging.info("Joins Completed")
     #plantMaterial = createPlantMaterial(path,True)
-    #intransitItem = pd.merge(plt,plantMaterial,on = 'MATNR',how = 'inner')
-    intransitItem = plt
+    plantMaterial.drop(columns=['ZZ_ABC','VMSTA'],axis=1,inplace=True)
+    plantMaterial = plantMaterial.drop_duplicates()
+    intransitItem = pd.merge(plt,plantMaterial,on = 'MATNR',how = 'inner')
+
     intransitItem['LABST'] = intransitItem['LABST'].astype(str).str.replace('-','')
     intransitItem['LABST'] = intransitItem['LABST'].astype(float)
     intransitItem['MATNR_Ekpo'] = intransitItem.MATNR_Ekpo.apply(lambda x: str(x).lstrip('0'))
@@ -409,7 +422,7 @@ def createInstansitItems(path,pathCSV):
     intransitItem['Activity'] = 'Instransit Item'
     intransitItem['Id'] = intransitItem.WERKS+'-'+intransitItem.MATNR
     intransitItem['Type'] = 'Total Plant'
-    #intransitItem =  intransitItem[['Activity','available_after_open_orders','BRGEW','CHARG','DPREG','EINDT','EINME','ERDAT_vttk','ERDAT_y','GSMNG','Id','INSME','LABST','LFDAT','LGMNG','LGORT','LGORT_Ekpo','MAKTX','MATNR','MBDAT','net_inventory_available','On_order_kpi','POSNR','ProductName','SPEME','STTRG','TKNUM','Type','UMLME','VBELN','VSTEL','WADAT','WERKS','ZZGLFUNC']]
+    intransitItem =  intransitItem[['Activity','available_after_open_orders','BRGEW','CHARG','DPREG','EINDT','EINME','ERDAT_vttk','ERDAT_y','GSMNG','Id','INSME','LABST','LFDAT','LGMNG','LGORT','LGORT_Ekpo','MAKTX','MATNR','MBDAT','net_inventory_available','On_order_kpi','POSNR','ProductName','SPEME','STTRG','TKNUM','Type','UMLME','VBELN','VSTEL','WADAT','WERKS','ZZGLFUNC']]
     logging.info("Start to add id and activity")
     rows = len(intransitItem)
     intransitItem = pd.concat([intransitItem]*3,ignore_index=True)

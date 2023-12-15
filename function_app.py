@@ -21,11 +21,14 @@ def blop_trigger(myblob: func.InputStream):
     logging.info(f"Python blob trigger function processed blob"
                 f"Name: {myblob.name}"
                 f"Blob Size: {myblob.length} bytes")
-    global output_dir
+    
     connection_string = os.environ['AzureWebJobsStorage']
     script_dir = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(script_dir, "stage1.yaml"), "r") as f:
         stage1_config = yaml.load(f, Loader=yaml.FullLoader)
+
+    shutil.rmtree('/tmp/stage1')
+    shutil.rmtree('/tmp/stage2')
 
     stage1_input_dir = stage1_config["directories"]["input"]
     stage1_output_dir = stage1_config["directories"]["output"]
@@ -40,7 +43,7 @@ def blop_trigger(myblob: func.InputStream):
     
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
     input_container = blob_service_client.get_container_client(container="stage1")
-    blop_name = myblob.name[(myblob.name.find('input/')):]#samplecontainer/input/LAP1027.zip
+    blop_name = myblob.name[(myblob.name.find('input/')):]
     blob_client = input_container.get_blob_client(blop_name)
 
     ### (3) Set up /tmp/stage1 tree structure ##############################################
@@ -64,9 +67,6 @@ def blop_trigger(myblob: func.InputStream):
         data['output_dir'] = output_dir
         json_data = json.dumps(data)
         container_client_upload = blob_service_client.get_container_client(container="stage1/merge")
-        # Note: A directory can't be created atomically in a bucket. So instead of using a
-        # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
-        #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
         blob = container_client_upload.get_blob_client("merge.trigger.txt")
         blob.upload_blob(json_data)
         print(f"############ END: Stage 1 for zip file: {zip_file_on_tmp} ############")
@@ -78,7 +78,6 @@ def blop_trigger(myblob: func.InputStream):
     if blob.exists():
         logging.debug(f"Deleting bucket file: {blop_name}")
         blob.delete_blob()
-
 
 @app.blob_trigger(arg_name="myblob", path="stage1/merge/{name}",
                                connection="AzureWebJobsStorage") 
@@ -102,23 +101,7 @@ def mergeFiles(myblob: func.InputStream):
     data = {}
     data['merge_directory'] = merge_directory
     json_data = json.dumps(data)
-
-    """
-    fileList = os.listdir(merge_directory)
-    for filename in fileList:
-        logging.info(f"FilesList: {filename}")
-        container_client_upload = blob_service_client.get_container_client(container="stage1/merge_directory")
-        blob_client_upload = container_client_upload.get_blob_client(filename)
-
-        f = open(merge_directory+'\\'+filename, 'r',encoding='utf-8')
-        byt = f.read()
-        blob_client_upload.upload_blob(byt, blob_type="BlockBlob")
-
-    """
     container_client_upload = blob_service_client.get_container_client(container="stage1/current")
-        # Note: A directory can't be created atomically in a bucket. So instead of using a
-        # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
-        #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
     blobCurrent = container_client_upload.get_blob_client("current.trigger.txt")
     blobCurrent.upload_blob(json_data)
 
@@ -161,9 +144,6 @@ def createCurrentOrder(myblob: func.InputStream):
     json_data = json.dumps(dataf)
 
     container_client_upload = blob_service_client.get_container_client(container="stage1/intransit")
-        # Note: A directory can't be created atomically in a bucket. So instead of using a
-        # created directory as the stage 2 trigger, we use a single "cf2.trigger.txt" file
-        #container_client_upload.from_connection_string(conn_str="<connection_string>", container_name="my_container", blob_name="my_blob")
     blobCurrent = container_client_upload.get_blob_client("intransit.trigger.txt")
     blobCurrent.upload_blob(json_data)
 
@@ -282,7 +262,6 @@ def uploadCurrentOrder(myblob: func.InputStream):
     dataf['digitalDirectory'] = digitalDirectory
     json_data = json.dumps(dataf)
     
-
     blob_client = blob_service_client.get_blob_client(container="stage1/uploadInstransit", blob="uploadInstransit.trigger.txt")
     input_stream = json_data
     blob_client.upload_blob(input_stream, blob_type="BlockBlob")
@@ -307,13 +286,6 @@ def uploadIntransit(myblob: func.InputStream):
     for filename in fileList:
         logging.info(f"FilesList: {filename}")
         container_client_upload = blob_service_client.get_container_client(container="stage2/Intransit")
-        """
-        blob_client_upload = container_client_upload.get_blob_client(filename)
-
-        f = open(instransitDirectory+'\\'+filename, 'r',encoding='utf-8')
-        byt = f.read()
-        blob_client_upload.upload_blob(byt, blob_type="BlockBlob")
-        """
         with open(file=os.path.join(instransitDirectory, filename), mode="rb") as data:
             blob_client = container_client_upload.upload_blob(name=filename, data=data, overwrite=True)
 
@@ -351,13 +323,6 @@ def uploadDigital(myblob: func.InputStream):
     for filename in fileList:
         logging.info(f"FilesList: {filename}")
         container_client_upload = blob_service_client.get_container_client(container="stage2/Digital")
-        """
-        blob_client_upload = container_client_upload.get_blob_client(filename)
-
-        f = open(digitalDirectory+'\\'+filename, 'r',encoding='utf-8')
-        byt = f.read()
-        blob_client_upload.upload_blob(byt, blob_type="BlockBlob")
-        """
         with open(file=os.path.join(digitalDirectory, filename), mode="rb") as data:
             blob_client = container_client_upload.upload_blob(name=filename, data=data, overwrite=True)
 
