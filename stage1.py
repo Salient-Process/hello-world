@@ -109,9 +109,9 @@ def createPlantMaterial(path,intransit):
     logging.info("Second File")
     t25a5 = pd.read_csv(os.path.join(path,'T25a5.csv'),on_bad_lines='skip',low_memory=False)
     logging.info("Third File")
-    t179t = pd.read_csv(os.path.join(path,'t179t.csv'),on_bad_lines='skip',low_memory=False,dtype = type_dictT)
+    t179t = pd.read_csv(os.path.join(path,'T179T.csv'),on_bad_lines='skip',low_memory=False,dtype = type_dictT)
     logging.info("Fourth File")
-    mara = pd.read_csv(os.path.join(path,'mara.csv'),on_bad_lines='skip',low_memory=False,dtype = type_dictM)
+    mara = pd.read_csv(os.path.join(path,'MARA.csv'),on_bad_lines='skip',low_memory=False,dtype = type_dictM)
     logging.info("Fifth File")
 
     logging.info("Was posible to read the files")
