@@ -267,11 +267,15 @@ def uploadCurrentOrder(myblob: func.InputStream):
     for filename in fileList:
         logging.info(f"FilesList: {filename}")
         container_client_upload = blob_service_client.get_container_client(container="stage2/currentOder")
+        """
         blob_client_upload = container_client_upload.get_blob_client(filename)
-
+        logging.info("Able to get the container information")
         f = open(currentOrderDirectory+'\\'+filename, 'r',encoding='utf-8')
         byt = f.read()
         blob_client_upload.upload_blob(byt, blob_type="BlockBlob")
+        """
+        with open(file=os.path.join(currentOrderDirectory, filename), mode="rb") as data:
+            blob_client = container_client_upload.upload_blob(name=filename, data=data, overwrite=True)
 
     if blob.exists():
         logging.debug(f"Deleting bucket file: digital.trigger.txt")
@@ -310,11 +314,15 @@ def uploadIntransit(myblob: func.InputStream):
     for filename in fileList:
         logging.info(f"FilesList: {filename}")
         container_client_upload = blob_service_client.get_container_client(container="stage2/Intransit")
+        """
         blob_client_upload = container_client_upload.get_blob_client(filename)
 
         f = open(instransitDirectory+'\\'+filename, 'r',encoding='utf-8')
         byt = f.read()
         blob_client_upload.upload_blob(byt, blob_type="BlockBlob")
+        """
+        with open(file=os.path.join(instransitDirectory, filename), mode="rb") as data:
+            blob_client = container_client_upload.upload_blob(name=filename, data=data, overwrite=True)
 
     if blob.exists():
         logging.debug(f"Deleting bucket file: digital.trigger.txt")
@@ -354,11 +362,15 @@ def uploadDigital(myblob: func.InputStream):
     for filename in fileList:
         logging.info(f"FilesList: {filename}")
         container_client_upload = blob_service_client.get_container_client(container="stage2/Digital")
+        """
         blob_client_upload = container_client_upload.get_blob_client(filename)
 
         f = open(digitalDirectory+'\\'+filename, 'r',encoding='utf-8')
         byt = f.read()
         blob_client_upload.upload_blob(byt, blob_type="BlockBlob")
+        """
+        with open(file=os.path.join(digitalDirectory, filename), mode="rb") as data:
+            blob_client = container_client_upload.upload_blob(name=filename, data=data, overwrite=True)
 
     if blob.exists():
         logging.debug(f"Deleting bucket file: digital.trigger.txt")
