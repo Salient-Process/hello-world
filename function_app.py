@@ -27,8 +27,10 @@ def blop_trigger(myblob: func.InputStream):
     with open(os.path.join(script_dir, "stage1.yaml"), "r") as f:
         stage1_config = yaml.load(f, Loader=yaml.FullLoader)
 
-    shutil.rmtree('/tmp/stage1')
-    shutil.rmtree('/tmp/stage2')
+    if os.path.exists('/tmp/stage1'):
+        shutil.rmtree('/tmp/stage1')
+    if os.path.exists('/tmp/stage2'):
+        shutil.rmtree('/tmp/stage2')
 
     stage1_input_dir = stage1_config["directories"]["input"]
     stage1_output_dir = stage1_config["directories"]["output"]
