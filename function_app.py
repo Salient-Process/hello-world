@@ -280,8 +280,8 @@ def uploadCurrentOrder(myblob: func.InputStream):
     fileList = os.listdir(currentOrderDirectory)
     for filename in fileList:
         logging.info(f"FilesList: {filename}")
-        container_client_upload = blob_service_client.get_container_client(container="stage2/currentOder")
-        with open(file=os.path.join(currentOrderDirectory, filename), mode="rb") as data:
+        container_client_upload = blob_service_client.get_container_client(container="stage2/currentOrder")
+        with open(file=os.path.join(currentOrderDirectory, filename), mode="rb") as data: 
             blob_client = container_client_upload.upload_blob(name=filename, data=data, overwrite=True)
 
     if blob.exists():
