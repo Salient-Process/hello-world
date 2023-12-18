@@ -266,8 +266,8 @@ def uploadCurrentOrder(myblob: func.InputStream):
                 f"Blob Size: {myblob.length} bytes")
     
     connection_string = os.environ['AzureWebJobsStorage']
-
-
+    connection_cf2 = os.environ['CF2StorageAccount']
+    blob_cf2_client = BlobServiceClient.from_connection_string(connection_cf2)
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
     input_container = blob_service_client.get_container_client(container="stage1/uploadCurrent")
     blob = input_container.get_blob_client("uploadCurrent.trigger.txt")
@@ -280,7 +280,7 @@ def uploadCurrentOrder(myblob: func.InputStream):
     fileList = os.listdir(currentOrderDirectory)
     for filename in fileList:
         logging.info(f"FilesList: {filename}")
-        container_client_upload = blob_service_client.get_container_client(container="stage2/currentOrder")
+        container_client_upload = blob_cf2_client.get_container_client(container="stage2/currentOrder")
         with open(file=os.path.join(currentOrderDirectory, filename), mode="rb") as data: 
             blob_client = container_client_upload.upload_blob(name=filename, data=data, overwrite=True)
 
@@ -311,13 +311,15 @@ def uploadIntransit(myblob: func.InputStream):
     digitalDirectory = data['digitalDirectory']
 
     connection_string = os.environ['AzureWebJobsStorage']
+    connection_cf2 = os.environ['CF2StorageAccount']
+    blob_cf2_client = BlobServiceClient.from_connection_string(connection_cf2)
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
     input_container = blob_service_client.get_container_client(container="stage1/uploadInstransit")
     blob = input_container.get_blob_client("uploadInstransit.trigger.txt")
     fileList = os.listdir(instransitDirectory)
     for filename in fileList:
         logging.info(f"FilesList: {filename}")
-        container_client_upload = blob_service_client.get_container_client(container="stage2/Intransit")
+        container_client_upload = blob_cf2_client.get_container_client(container="stage2/Intransit")
         with open(file=os.path.join(instransitDirectory, filename), mode="rb") as data:
             blob_client = container_client_upload.upload_blob(name=filename, data=data, overwrite=True)
 
@@ -348,23 +350,25 @@ def uploadDigital(myblob: func.InputStream):
     digitalDirectory =  data['digitalDirectory']
     
     connection_string = os.environ['AzureWebJobsStorage']
+    connection_cf2 = os.environ['CF2StorageAccount']
+    blob_cf2_client = BlobServiceClient.from_connection_string(connection_cf2)
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
     input_container = blob_service_client.get_container_client(container="stage1/uploadDigital")
     blob = input_container.get_blob_client("uploadDigital.trigger.txt")
+
     fileList = os.listdir(digitalDirectory)
     for filename in fileList:
         logging.info(f"FilesList: {filename}")
-        container_client_upload = blob_service_client.get_container_client(container="stage2/Digital")
+        container_client_upload = blob_cf2_client.get_container_client(container="stage2/Digital")
         with open(file=os.path.join(digitalDirectory, filename), mode="rb") as data:
             blob_client = container_client_upload.upload_blob(name=filename, data=data, overwrite=True)
 
     if blob.exists():
         logging.debug(f"Deleting bucket file: digital.trigger.txt")
         blob.delete_blob()
-    
-    blob_client = blob_service_client.get_blob_client(container="stage2", blob="sendToPrM.trigger.txt")
+   
+    blob_client = blob_cf2_client.get_blob_client(container="stage2", blob="sendToPrM.trigger.txt")
     input_stream = "trigger me"
     blob_client.upload_blob(input_stream, blob_type="BlockBlob")
 
     shutil.rmtree(instransitDirectory)                                                                                                                                       
-
